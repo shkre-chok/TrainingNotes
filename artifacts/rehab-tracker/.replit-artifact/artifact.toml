@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Rehab Session Tracker"
+title = "Training Session Tracker"
 version = "1.0.0"
 id = "artifacts/rehab-tracker"
 router = "path"
