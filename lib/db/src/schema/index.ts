@@ -1,20 +1,51 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import { pgTable, text, integer, timestamp, boolean, date } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
-export {}
+export const clientsTable = pgTable("clients", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  condition: text("condition"),
+  startDate: date("start_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const goalsTable = pgTable("goals", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: text("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category"),
+  status: text("status").notNull().default("active"),
+  progress: integer("progress").notNull().default(0),
+  targetDate: date("target_date"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sessionsTable = pgTable("sessions", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: text("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
+  title: text("title"),
+  sessionDate: timestamp("session_date", { withTimezone: true }).notNull(),
+  durationMinutes: integer("duration_minutes"),
+  focusArea: text("focus_area"),
+  painLevel: integer("pain_level"),
+  energyLevel: integer("energy_level"),
+  summary: text("summary"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const notesTable = pgTable("notes", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: text("session_id").notNull().references(() => sessionsTable.id, { onDelete: "cascade" }),
+  goalId: text("goal_id").references(() => goalsTable.id, { onDelete: "set null" }),
+  content: text("content").notNull(),
+  kind: text("kind").notNull().default("observation"),
+  important: boolean("important").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Client = typeof clientsTable.$inferSelect;
+export type Goal = typeof goalsTable.$inferSelect;
+export type Session = typeof sessionsTable.$inferSelect;
+export type Note = typeof notesTable.$inferSelect;

@@ -3,34 +3,483 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Rehab Session Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: clients
+  - name: goals
+  - name: sessions
+  - name: notes
+  - name: dashboard
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: array
+                items: { $ref: "#/components/schemas/Client" }
+    post:
+      operationId: createClient
+      tags: [clients]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewClient" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Client" }
+
+  /clients/{clientId}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      parameters:
+        - { name: clientId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Client" }
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      parameters:
+        - { name: clientId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Client" }
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      parameters:
+        - { name: clientId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /goals:
+    get:
+      operationId: listGoals
+      tags: [goals]
+      parameters:
+        - { name: clientId, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [active, achieved, paused, archived] } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Goal" }
+    post:
+      operationId: createGoal
+      tags: [goals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewGoal" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Goal" }
+
+  /goals/{goalId}:
+    get:
+      operationId: getGoal
+      tags: [goals]
+      parameters:
+        - { name: goalId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Goal" }
+    patch:
+      operationId: updateGoal
+      tags: [goals]
+      parameters:
+        - { name: goalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GoalUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Goal" }
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      parameters:
+        - { name: goalId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /sessions:
+    get:
+      operationId: listSessions
+      tags: [sessions]
+      parameters:
+        - { name: clientId, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Session" }
+    post:
+      operationId: createSession
+      tags: [sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewSession" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+
+  /sessions/{sessionId}:
+    get:
+      operationId: getSession
+      tags: [sessions]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionDetail" }
+    patch:
+      operationId: updateSession
+      tags: [sessions]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SessionUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+    delete:
+      operationId: deleteSession
+      tags: [sessions]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /sessions/{sessionId}/notes:
+    get:
+      operationId: listSessionNotes
+      tags: [notes]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Note" }
+    post:
+      operationId: createSessionNote
+      tags: [notes]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewNote" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Note" }
+
+  /notes/{noteId}:
+    patch:
+      operationId: updateNote
+      tags: [notes]
+      parameters:
+        - { name: noteId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Note" }
+    delete:
+      operationId: deleteNote
+      tags: [notes]
+      parameters:
+        - { name: noteId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ActivityItem" }
+
+  /dashboard/upcoming-sessions:
+    get:
+      operationId: getUpcomingSessions
+      tags: [dashboard]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Session" }
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
 
+    Client:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        condition: { type: string, nullable: true }
+        startDate: { type: string, format: date, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    NewClient:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        condition: { type: string, nullable: true }
+        startDate: { type: string, format: date, nullable: true }
+        notes: { type: string, nullable: true }
+    ClientUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        condition: { type: string, nullable: true }
+        startDate: { type: string, format: date, nullable: true }
+        notes: { type: string, nullable: true }
+
+    Goal:
+      type: object
+      required: [id, clientId, title, status, progress, createdAt]
+      properties:
+        id: { type: string }
+        clientId: { type: string }
+        clientName: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        status: { type: string, enum: [active, achieved, paused, archived] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        targetDate: { type: string, format: date, nullable: true }
+        createdAt: { type: string, format: date-time }
+    NewGoal:
+      type: object
+      required: [clientId, title]
+      properties:
+        clientId: { type: string }
+        title: { type: string, minLength: 1 }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        status: { type: string, enum: [active, achieved, paused, archived] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        targetDate: { type: string, format: date, nullable: true }
+    GoalUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        status: { type: string, enum: [active, achieved, paused, archived] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        targetDate: { type: string, format: date, nullable: true }
+
+    Session:
+      type: object
+      required: [id, clientId, sessionDate, createdAt]
+      properties:
+        id: { type: string }
+        clientId: { type: string }
+        clientName: { type: string }
+        title: { type: string, nullable: true }
+        sessionDate: { type: string, format: date-time }
+        durationMinutes: { type: integer, nullable: true }
+        focusArea: { type: string, nullable: true }
+        painLevel: { type: integer, minimum: 0, maximum: 10, nullable: true }
+        energyLevel: { type: integer, minimum: 0, maximum: 10, nullable: true }
+        summary: { type: string, nullable: true }
+        noteCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+    SessionDetail:
+      allOf:
+        - $ref: "#/components/schemas/Session"
+        - type: object
+          properties:
+            notes:
+              type: array
+              items: { $ref: "#/components/schemas/Note" }
+            goals:
+              type: array
+              items: { $ref: "#/components/schemas/Goal" }
+    NewSession:
+      type: object
+      required: [clientId, sessionDate]
+      properties:
+        clientId: { type: string }
+        title: { type: string, nullable: true }
+        sessionDate: { type: string, format: date-time }
+        durationMinutes: { type: integer, nullable: true }
+        focusArea: { type: string, nullable: true }
+        painLevel: { type: integer, minimum: 0, maximum: 10, nullable: true }
+        energyLevel: { type: integer, minimum: 0, maximum: 10, nullable: true }
+        summary: { type: string, nullable: true }
+    SessionUpdate:
+      type: object
+      properties:
+        title: { type: string, nullable: true }
+        sessionDate: { type: string, format: date-time }
+        durationMinutes: { type: integer, nullable: true }
+        focusArea: { type: string, nullable: true }
+        painLevel: { type: integer, minimum: 0, maximum: 10, nullable: true }
+        energyLevel: { type: integer, minimum: 0, maximum: 10, nullable: true }
+        summary: { type: string, nullable: true }
+
+    Note:
+      type: object
+      required: [id, sessionId, content, kind, createdAt]
+      properties:
+        id: { type: string }
+        sessionId: { type: string }
+        goalId: { type: string, nullable: true }
+        content: { type: string }
+        kind: { type: string, enum: [observation, win, concern, action, measurement] }
+        important: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    NewNote:
+      type: object
+      required: [content, kind]
+      properties:
+        content: { type: string, minLength: 1 }
+        kind: { type: string, enum: [observation, win, concern, action, measurement] }
+        important: { type: boolean }
+        goalId: { type: string, nullable: true }
+    NoteUpdate:
+      type: object
+      properties:
+        content: { type: string }
+        kind: { type: string, enum: [observation, win, concern, action, measurement] }
+        important: { type: boolean }
+        goalId: { type: string, nullable: true }
+
+    DashboardSummary:
+      type: object
+      required: [totalClients, totalSessions, activeGoals, achievedGoals, importantNotes, sessionsThisWeek]
+      properties:
+        totalClients: { type: integer }
+        totalSessions: { type: integer }
+        activeGoals: { type: integer }
+        achievedGoals: { type: integer }
+        importantNotes: { type: integer }
+        sessionsThisWeek: { type: integer }
+        avgPainLevel: { type: number, nullable: true }
+        avgEnergyLevel: { type: number, nullable: true }
+
+    ActivityItem:
+      type: object
+      required: [id, kind, title, timestamp]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [session, note, goal] }
+        title: { type: string }
+        subtitle: { type: string, nullable: true }
+        clientName: { type: string, nullable: true }
+        timestamp: { type: string, format: date-time }
