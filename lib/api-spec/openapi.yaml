@@ -13,6 +13,7 @@ tags:
   - name: goals
   - name: sessions
   - name: notes
+  - name: exercises
   - name: dashboard
 paths:
   /healthz:
@@ -277,6 +278,77 @@ paths:
       responses:
         "204": { description: Deleted }
 
+  /sessions/{sessionId}/exercises:
+    get:
+      operationId: listSessionExercises
+      tags: [exercises]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Exercise" }
+    post:
+      operationId: createSessionExercise
+      tags: [exercises]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewExercise" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Exercise" }
+
+  /exercises/{exerciseId}:
+    patch:
+      operationId: updateExercise
+      tags: [exercises]
+      parameters:
+        - { name: exerciseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExerciseUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Exercise" }
+    delete:
+      operationId: deleteExercise
+      tags: [exercises]
+      parameters:
+        - { name: exerciseId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /clients/{clientId}/exercise-progress:
+    get:
+      operationId: getClientExerciseProgress
+      tags: [exercises]
+      parameters:
+        - { name: clientId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExerciseProgress" }
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -459,6 +531,68 @@ components:
         kind: { type: string, enum: [observation, win, concern, action, measurement] }
         important: { type: boolean }
         goalId: { type: string, nullable: true }
+
+    ExerciseSet:
+      type: object
+      required: [weight, reps]
+      properties:
+        weight: { type: number }
+        reps: { type: integer, minimum: 0 }
+    Exercise:
+      type: object
+      required: [id, sessionId, name, unit, sets, position, createdAt]
+      properties:
+        id: { type: string }
+        sessionId: { type: string }
+        name: { type: string }
+        unit: { type: string, enum: [kg, lb] }
+        sets:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseSet" }
+        notes: { type: string, nullable: true }
+        position: { type: integer }
+        createdAt: { type: string, format: date-time }
+    NewExercise:
+      type: object
+      required: [name, sets]
+      properties:
+        name: { type: string, minLength: 1 }
+        unit: { type: string, enum: [kg, lb] }
+        sets:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseSet" }
+        notes: { type: string, nullable: true }
+        position: { type: integer }
+    ExerciseUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        unit: { type: string, enum: [kg, lb] }
+        sets:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseSet" }
+        notes: { type: string, nullable: true }
+        position: { type: integer }
+
+    ExerciseProgressPoint:
+      type: object
+      required: [sessionId, sessionDate, maxWeight, totalReps, totalVolume, topSetReps]
+      properties:
+        sessionId: { type: string }
+        sessionDate: { type: string, format: date-time }
+        maxWeight: { type: number }
+        topSetReps: { type: integer }
+        totalReps: { type: integer }
+        totalVolume: { type: number }
+    ExerciseProgress:
+      type: object
+      required: [name, unit, points]
+      properties:
+        name: { type: string }
+        unit: { type: string }
+        points:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseProgressPoint" }
 
     DashboardSummary:
       type: object

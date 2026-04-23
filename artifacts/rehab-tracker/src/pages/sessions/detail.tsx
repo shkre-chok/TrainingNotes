@@ -18,6 +18,7 @@ import {
 
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ExercisesSection } from "@/components/exercises/ExercisesSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -226,6 +227,8 @@ export default function SessionDetail() {
             </div>
           )}
         </div>
+
+        <ExercisesSection sessionId={sessionId} />
 
         {/* Notes Timeline Area */}
         <Card className="flex-1 flex flex-col min-h-0 border-border/50 shadow-sm overflow-hidden">

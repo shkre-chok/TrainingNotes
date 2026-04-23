@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, boolean, date } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, date, jsonb } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const clientsTable = pgTable("clients", {
@@ -45,7 +45,24 @@ export const notesTable = pgTable("notes", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type ExerciseSet = {
+  weight: number;
+  reps: number;
+};
+
+export const exercisesTable = pgTable("exercises", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: text("session_id").notNull().references(() => sessionsTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  unit: text("unit").notNull().default("kg"),
+  sets: jsonb("sets").$type<ExerciseSet[]>().notNull().default(sql`'[]'::jsonb`),
+  notes: text("notes"),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Client = typeof clientsTable.$inferSelect;
 export type Goal = typeof goalsTable.$inferSelect;
 export type Session = typeof sessionsTable.$inferSelect;
 export type Note = typeof notesTable.$inferSelect;
+export type Exercise = typeof exercisesTable.$inferSelect;

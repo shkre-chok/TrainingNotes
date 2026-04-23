@@ -428,6 +428,115 @@ export const DeleteNoteParams = zod.object({
   noteId: zod.coerce.string(),
 });
 
+export const ListSessionExercisesParams = zod.object({
+  sessionId: zod.coerce.string(),
+});
+
+export const listSessionExercisesResponseSetsItemRepsMin = 0;
+
+export const ListSessionExercisesResponseItem = zod.object({
+  id: zod.string(),
+  sessionId: zod.string(),
+  name: zod.string(),
+  unit: zod.enum(["kg", "lb"]),
+  sets: zod.array(
+    zod.object({
+      weight: zod.number(),
+      reps: zod.number().min(listSessionExercisesResponseSetsItemRepsMin),
+    }),
+  ),
+  notes: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListSessionExercisesResponse = zod.array(
+  ListSessionExercisesResponseItem,
+);
+
+export const CreateSessionExerciseParams = zod.object({
+  sessionId: zod.coerce.string(),
+});
+
+export const createSessionExerciseBodySetsItemRepsMin = 0;
+
+export const CreateSessionExerciseBody = zod.object({
+  name: zod.string().min(1),
+  unit: zod.enum(["kg", "lb"]).optional(),
+  sets: zod.array(
+    zod.object({
+      weight: zod.number(),
+      reps: zod.number().min(createSessionExerciseBodySetsItemRepsMin),
+    }),
+  ),
+  notes: zod.string().nullish(),
+  position: zod.number().optional(),
+});
+
+export const UpdateExerciseParams = zod.object({
+  exerciseId: zod.coerce.string(),
+});
+
+export const updateExerciseBodySetsItemRepsMin = 0;
+
+export const UpdateExerciseBody = zod.object({
+  name: zod.string().optional(),
+  unit: zod.enum(["kg", "lb"]).optional(),
+  sets: zod
+    .array(
+      zod.object({
+        weight: zod.number(),
+        reps: zod.number().min(updateExerciseBodySetsItemRepsMin),
+      }),
+    )
+    .optional(),
+  notes: zod.string().nullish(),
+  position: zod.number().optional(),
+});
+
+export const updateExerciseResponseSetsItemRepsMin = 0;
+
+export const UpdateExerciseResponse = zod.object({
+  id: zod.string(),
+  sessionId: zod.string(),
+  name: zod.string(),
+  unit: zod.enum(["kg", "lb"]),
+  sets: zod.array(
+    zod.object({
+      weight: zod.number(),
+      reps: zod.number().min(updateExerciseResponseSetsItemRepsMin),
+    }),
+  ),
+  notes: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+export const DeleteExerciseParams = zod.object({
+  exerciseId: zod.coerce.string(),
+});
+
+export const GetClientExerciseProgressParams = zod.object({
+  clientId: zod.coerce.string(),
+});
+
+export const GetClientExerciseProgressResponseItem = zod.object({
+  name: zod.string(),
+  unit: zod.string(),
+  points: zod.array(
+    zod.object({
+      sessionId: zod.string(),
+      sessionDate: zod.coerce.date(),
+      maxWeight: zod.number(),
+      topSetReps: zod.number(),
+      totalReps: zod.number(),
+      totalVolume: zod.number(),
+    }),
+  ),
+});
+export const GetClientExerciseProgressResponse = zod.array(
+  GetClientExerciseProgressResponseItem,
+);
+
 export const GetDashboardSummaryResponse = zod.object({
   totalClients: zod.number(),
   totalSessions: zod.number(),

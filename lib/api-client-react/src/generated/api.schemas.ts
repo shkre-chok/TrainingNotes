@@ -227,6 +227,78 @@ export interface NoteUpdate {
   goalId?: string | null;
 }
 
+export interface ExerciseSet {
+  weight: number;
+  /** @minimum 0 */
+  reps: number;
+}
+
+export type ExerciseUnit = (typeof ExerciseUnit)[keyof typeof ExerciseUnit];
+
+export const ExerciseUnit = {
+  kg: "kg",
+  lb: "lb",
+} as const;
+
+export interface Exercise {
+  id: string;
+  sessionId: string;
+  name: string;
+  unit: ExerciseUnit;
+  sets: ExerciseSet[];
+  notes?: string | null;
+  position: number;
+  createdAt: string;
+}
+
+export type NewExerciseUnit =
+  (typeof NewExerciseUnit)[keyof typeof NewExerciseUnit];
+
+export const NewExerciseUnit = {
+  kg: "kg",
+  lb: "lb",
+} as const;
+
+export interface NewExercise {
+  /** @minLength 1 */
+  name: string;
+  unit?: NewExerciseUnit;
+  sets: ExerciseSet[];
+  notes?: string | null;
+  position?: number;
+}
+
+export type ExerciseUpdateUnit =
+  (typeof ExerciseUpdateUnit)[keyof typeof ExerciseUpdateUnit];
+
+export const ExerciseUpdateUnit = {
+  kg: "kg",
+  lb: "lb",
+} as const;
+
+export interface ExerciseUpdate {
+  name?: string;
+  unit?: ExerciseUpdateUnit;
+  sets?: ExerciseSet[];
+  notes?: string | null;
+  position?: number;
+}
+
+export interface ExerciseProgressPoint {
+  sessionId: string;
+  sessionDate: string;
+  maxWeight: number;
+  topSetReps: number;
+  totalReps: number;
+  totalVolume: number;
+}
+
+export interface ExerciseProgress {
+  name: string;
+  unit: string;
+  points: ExerciseProgressPoint[];
+}
+
 export interface DashboardSummary {
   totalClients: number;
   totalSessions: number;

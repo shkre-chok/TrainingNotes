@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ExerciseProgressChart } from "@/components/exercises/ExerciseProgressChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -186,6 +187,7 @@ export default function ClientDetail() {
           </TabsList>
           
           <TabsContent value="sessions" className="mt-6 space-y-6">
+            <ExerciseProgressChart clientId={clientId} />
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-serif font-medium">Session History</h2>
               <Link href={`/sessions/new?client=${clientId}`}>
