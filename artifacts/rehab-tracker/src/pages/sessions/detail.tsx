@@ -13,9 +13,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { 
   ArrowLeft, Clock, Activity, Zap, Info, 
   MessageSquare, Trophy, AlertTriangle, PlayCircle, Ruler,
-  Flag, Trash2, Send
+  Flag, Trash2, Send, Mic, MicOff
 } from "lucide-react";
 
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,30 @@ export default function SessionDetail() {
   const [noteContent, setNoteContent] = useState("");
   const [noteKind, setNoteKind] = useState<NewNoteKind>("observation");
   const [isImportant, setIsImportant] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState("");
+
+  const speech = useSpeechRecognition({
+    lang: "he-IL",
+    onFinalTranscript: (text) => {
+      setNoteContent((prev) => {
+        const trimmed = prev.trimEnd();
+        return trimmed ? `${trimmed} ${text.trim()}` : text.trim();
+      });
+      setInterimTranscript("");
+    },
+    onInterimTranscript: (text) => {
+      setInterimTranscript(text);
+    },
+  });
+
+  const toggleMic = () => {
+    if (speech.isListening) {
+      speech.stop();
+      setInterimTranscript("");
+    } else {
+      speech.start();
+    }
+  };
 
   const { data: session, isLoading: isLoadingSession } = useGetSession(sessionId, {
     query: { enabled: !!sessionId, queryKey: getGetSessionQueryKey(sessionId) }
@@ -255,7 +280,7 @@ export default function SessionDetail() {
                         <div className={`p-3 md:p-4 rounded-xl text-sm md:text-base border shadow-sm relative group-hover:border-foreground/20 transition-colors
                           ${note.important ? 'bg-destructive/5 border-destructive/20 text-foreground' : `bg-card ${style.border} text-foreground/90`}
                         `}>
-                          <p className="whitespace-pre-wrap break-words">{note.content}</p>
+                          <p dir="auto" className="whitespace-pre-wrap break-words">{note.content}</p>
                           
                           <Button 
                             variant="ghost" 
@@ -316,12 +341,26 @@ export default function SessionDetail() {
                 
                 <div className="relative">
                   <Textarea 
-                    value={noteContent}
+                    dir="auto"
+                    value={noteContent + (interimTranscript ? (noteContent ? " " : "") + interimTranscript : "")}
                     onChange={(e) => setNoteContent(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type an observation... (Press Enter to save, Shift+Enter for new line)"
-                    className="min-h-[60px] resize-none pr-12 focus-visible:ring-primary/50 text-base py-3"
+                    placeholder={speech.isListening ? "Listening in Hebrew..." : "Type or dictate (Hebrew supported). Enter to save, Shift+Enter for newline."}
+                    className="min-h-[60px] resize-none pr-24 focus-visible:ring-primary/50 text-base py-3"
                   />
+                  {speech.isSupported && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={speech.isListening ? "default" : "ghost"}
+                      onClick={toggleMic}
+                      className={`absolute bottom-2 right-12 h-8 w-8 rounded-full ${speech.isListening ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse' : 'text-muted-foreground hover:text-foreground'}`}
+                      title={speech.isListening ? "Stop dictation" : "Dictate in Hebrew (he-IL)"}
+                      aria-label={speech.isListening ? "Stop dictation" : "Start Hebrew dictation"}
+                    >
+                      {speech.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                    </Button>
+                  )}
                   <Button 
                     type="submit" 
                     size="icon" 
@@ -331,6 +370,12 @@ export default function SessionDetail() {
                     <Send size={14} className={noteContent.trim() && !isImportant ? "translate-x-[-1px] translate-y-[1px]" : ""} />
                   </Button>
                 </div>
+                {speech.error && (
+                  <p className="text-xs text-destructive mt-1">{speech.error}</p>
+                )}
+                {!speech.isSupported && (
+                  <p className="text-xs text-muted-foreground mt-1">Hebrew dictation requires Chrome or Edge.</p>
+                )}
               </div>
             </form>
           </div>
