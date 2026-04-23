@@ -102,7 +102,7 @@ export default function Goals() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-serif font-medium text-foreground tracking-tight">Goals</h1>
-          <p className="text-muted-foreground mt-1">Track rehab objectives across all clients.</p>
+          <p className="text-muted-foreground mt-1">Track training objectives across all clients.</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4">

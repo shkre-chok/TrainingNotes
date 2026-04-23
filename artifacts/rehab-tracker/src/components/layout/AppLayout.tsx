@@ -26,7 +26,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <div className="h-8 w-8 bg-sidebar-primary rounded-md flex items-center justify-center text-sidebar-primary-foreground shadow-sm">
                 <Activity size={18} strokeWidth={2.5} />
               </div>
-              <span className="font-serif text-lg font-medium tracking-tight">Rehab Tracker</span>
+              <span className="font-serif text-lg font-medium tracking-tight">Training Tracker</span>
             </div>
           </Link>
         </div>

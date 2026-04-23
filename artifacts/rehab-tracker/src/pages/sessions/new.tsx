@@ -118,7 +118,7 @@ export default function NewSession() {
             <ArrowLeft size={16} className="mr-1" /> Back
           </Button>
           <h1 className="text-3xl font-serif font-medium text-foreground tracking-tight">Log Session</h1>
-          <p className="text-muted-foreground mt-1">Start a new rehab session or log a past one.</p>
+          <p className="text-muted-foreground mt-1">Start a new training session or log a past one.</p>
         </div>
 
         <Card className="shadow-sm border-border/50">

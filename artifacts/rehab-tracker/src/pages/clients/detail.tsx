@@ -273,7 +273,7 @@ export default function ClientDetail() {
           
           <TabsContent value="goals" className="mt-6 space-y-8">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-serif font-medium">Rehab Goals</h2>
+              <h2 className="text-xl font-serif font-medium">Training Goals</h2>
               <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline" className="border-border/50 shadow-sm">
