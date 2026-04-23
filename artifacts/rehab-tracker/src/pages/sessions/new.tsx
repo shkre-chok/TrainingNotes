@@ -26,6 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -250,7 +251,7 @@ export default function NewSession() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Activity size={16} className="text-amber-500" />
-                          <FormLabel className="mb-0">Pain Level (0-10)</FormLabel>
+                          <Label className="mb-0">Pain Level (0-10)</Label>
                         </div>
                         <Button 
                           type="button" 
@@ -295,7 +296,7 @@ export default function NewSession() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Zap size={16} className="text-blue-500" />
-                          <FormLabel className="mb-0">Energy Level (0-10)</FormLabel>
+                          <Label className="mb-0">Energy Level (0-10)</Label>
                         </div>
                         <Button 
                           type="button" 
