@@ -60,6 +60,13 @@ export default function NewSession() {
   const [energyEnabled, setEnergyEnabled] = useState(false);
   const [interimFocus, setInterimFocus] = useState("");
 
+  const LANGS = [
+    { code: "he-IL", flag: "🇮🇱", label: "Hebrew" },
+    { code: "en-US", flag: "🇬🇧", label: "English" },
+  ] as const;
+  const [focusLangIndex, setFocusLangIndex] = useState(0);
+  const focusLang = LANGS[focusLangIndex];
+
   const { data: clients, isLoading: isLoadingClients } = useListClients({
     query: { queryKey: getListClientsQueryKey() }
   });
@@ -106,6 +113,7 @@ export default function NewSession() {
 
   // Voice for Focus Area
   const voiceFocus = useSpeechRecognition({
+    lang: focusLang.code,
     continuous: false,
     interimResults: true,
     onFinalTranscript: (text) => {
@@ -269,20 +277,32 @@ export default function NewSession() {
                             <Input
                               placeholder={
                                 voiceFocus.isListening
-                                  ? interimFocus || "Listening…"
+                                  ? interimFocus || `Listening in ${focusLang.label}…`
                                   : "E.g. Knee extension, core stability"
                               }
-                              className={voiceFocus.isListening ? "pr-10 border-red-400 ring-1 ring-red-300" : "pr-10"}
+                              className={voiceFocus.isListening ? "pr-20 border-red-400 ring-1 ring-red-300" : "pr-20"}
                               {...field}
                             />
                           </FormControl>
                           <Button
                             type="button"
                             variant="ghost"
+                            className="absolute right-9 top-1/2 -translate-y-1/2 h-7 px-1 text-base leading-none text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              if (voiceFocus.isListening) voiceFocus.stop();
+                              setFocusLangIndex((i) => (i + 1) % LANGS.length);
+                            }}
+                            title={`Switch language (current: ${focusLang.label})`}
+                          >
+                            {focusLang.flag}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
                             size="icon"
                             className={`absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 ${voiceFocus.isListening ? "text-red-500" : "text-muted-foreground"}`}
                             onClick={() => voiceFocus.isListening ? voiceFocus.stop() : voiceFocus.start()}
-                            title={voiceFocus.isListening ? "Stop recording" : "Record by voice"}
+                            title={voiceFocus.isListening ? "Stop recording" : `Record in ${focusLang.label}`}
                           >
                             {voiceFocus.isListening ? <MicOff size={15} /> : <Mic size={15} />}
                           </Button>

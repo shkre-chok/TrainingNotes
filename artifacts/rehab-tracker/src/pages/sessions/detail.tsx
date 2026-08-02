@@ -55,8 +55,15 @@ export default function SessionDetail() {
   const [isImportant, setIsImportant] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
 
+  const LANGS = [
+    { code: "he-IL", flag: "🇮🇱", label: "Hebrew" },
+    { code: "en-US", flag: "🇬🇧", label: "English" },
+  ] as const;
+  const [langIndex, setLangIndex] = useState(0);
+  const currentLang = LANGS[langIndex];
+
   const speech = useSpeechRecognition({
-    lang: "he-IL",
+    lang: currentLang.code,
     onFinalTranscript: (text) => {
       setNoteContent((prev) => {
         const trimmed = prev.trimEnd();
@@ -348,21 +355,34 @@ export default function SessionDetail() {
                     value={noteContent + (interimTranscript ? (noteContent ? " " : "") + interimTranscript : "")}
                     onChange={(e) => setNoteContent(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={speech.isListening ? "Listening in Hebrew..." : "Type or dictate (Hebrew supported). Enter to save, Shift+Enter for newline."}
-                    className="min-h-[60px] resize-none pr-24 focus-visible:ring-primary/50 text-base py-3"
+                    placeholder={speech.isListening ? `Listening in ${currentLang.label}…` : "Type or dictate. Enter to save, Shift+Enter for newline."}
+                    className="min-h-[60px] resize-none pr-28 focus-visible:ring-primary/50 text-base py-3"
                   />
                   {speech.isSupported && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant={speech.isListening ? "default" : "ghost"}
-                      onClick={toggleMic}
-                      className={`absolute bottom-2 right-12 h-8 w-8 rounded-full ${speech.isListening ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse' : 'text-muted-foreground hover:text-foreground'}`}
-                      title={speech.isListening ? "Stop dictation" : "Dictate in Hebrew (he-IL)"}
-                      aria-label={speech.isListening ? "Stop dictation" : "Start Hebrew dictation"}
-                    >
-                      {speech.isListening ? <MicOff size={14} /> : <Mic size={14} />}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          if (speech.isListening) speech.stop();
+                          setLangIndex((i) => (i + 1) % LANGS.length);
+                        }}
+                        className="absolute bottom-2 right-20 h-8 px-1.5 rounded-full text-base leading-none text-muted-foreground hover:text-foreground"
+                        title={`Switch language (current: ${currentLang.label})`}
+                      >
+                        {currentLang.flag}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant={speech.isListening ? "default" : "ghost"}
+                        onClick={toggleMic}
+                        className={`absolute bottom-2 right-12 h-8 w-8 rounded-full ${speech.isListening ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse' : 'text-muted-foreground hover:text-foreground'}`}
+                        title={speech.isListening ? "Stop dictation" : `Dictate in ${currentLang.label}`}
+                      >
+                        {speech.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                      </Button>
+                    </>
                   )}
                   <Button 
                     type="submit" 
