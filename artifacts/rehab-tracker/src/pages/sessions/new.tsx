@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
-import { format } from "date-fns";
-import { useForm } from "react-hook-form";
+import { format, parse } from "date-fns";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, Clock, Activity, Zap, FileText } from "lucide-react";
+import { ArrowLeft, Clock, Activity, Zap, FileText, Mic, MicOff } from "lucide-react";
 import { 
   useListClients, getListClientsQueryKey,
   useCreateSession
 } from "@workspace/api-client-react";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -57,6 +58,7 @@ export default function NewSession() {
   const queryClient = useQueryClient();
   const [painEnabled, setPainEnabled] = useState(false);
   const [energyEnabled, setEnergyEnabled] = useState(false);
+  const [interimFocus, setInterimFocus] = useState("");
 
   const { data: clients, isLoading: isLoadingClients } = useListClients({
     query: { queryKey: getListClientsQueryKey() }
@@ -85,6 +87,33 @@ export default function NewSession() {
       energyLevel: 5,
       summary: "",
     },
+  });
+
+  // Auto-generate title from client + date + time
+  const watchedClientId = useWatch({ control: form.control, name: "clientId" });
+  const watchedDate = useWatch({ control: form.control, name: "sessionDate" });
+  const watchedTime = useWatch({ control: form.control, name: "sessionTime" });
+
+  useEffect(() => {
+    const client = clients?.find((c) => c.id === watchedClientId);
+    if (!client || !watchedDate) return;
+    try {
+      const dt = parse(`${watchedDate} ${watchedTime || "00:00"}`, "yyyy-MM-dd HH:mm", new Date());
+      const title = `${client.name} – ${format(dt, "d MMM yyyy, HH:mm")}`;
+      form.setValue("title", title);
+    } catch {}
+  }, [watchedClientId, watchedDate, watchedTime, clients]);
+
+  // Voice for Focus Area
+  const voiceFocus = useSpeechRecognition({
+    continuous: false,
+    interimResults: true,
+    onFinalTranscript: (text) => {
+      const current = form.getValues("focusArea") || "";
+      form.setValue("focusArea", (current ? current + " " : "") + text.trim());
+      setInterimFocus("");
+    },
+    onInterimTranscript: (text) => setInterimFocus(text),
   });
 
   function onSubmit(values: z.infer<typeof sessionSchema>) {
@@ -210,34 +239,61 @@ export default function NewSession() {
                     Session Focus
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title (Optional)</FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Session Title</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            readOnly
+                            className="bg-muted/40 text-muted-foreground cursor-default"
+                            placeholder="Select a client and date to generate title…"
+                          />
+                        </FormControl>
+                        <FormDescription>Auto-generated from client name, date and time.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="focusArea"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Focus Area</FormLabel>
+                        <div className="relative">
                           <FormControl>
-                            <Input placeholder="E.g. Phase 2 Assessment" {...field} />
+                            <Input
+                              placeholder={
+                                voiceFocus.isListening
+                                  ? interimFocus || "Listening…"
+                                  : "E.g. Knee extension, core stability"
+                              }
+                              className={voiceFocus.isListening ? "pr-10 border-red-400 ring-1 ring-red-300" : "pr-10"}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="focusArea"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Focus Area (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="E.g. Knee extension, core stability" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={`absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 ${voiceFocus.isListening ? "text-red-500" : "text-muted-foreground"}`}
+                            onClick={() => voiceFocus.isListening ? voiceFocus.stop() : voiceFocus.start()}
+                            title={voiceFocus.isListening ? "Stop recording" : "Record by voice"}
+                          >
+                            {voiceFocus.isListening ? <MicOff size={15} /> : <Mic size={15} />}
+                          </Button>
+                        </div>
+                        {voiceFocus.error && (
+                          <p className="text-xs text-destructive mt-1">{voiceFocus.error}</p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 {/* Vitals */}
