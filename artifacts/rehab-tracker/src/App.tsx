@@ -10,6 +10,7 @@ import Goals from "@/pages/goals/index";
 import Sessions from "@/pages/sessions/index";
 import SessionDetail from "@/pages/sessions/detail";
 import NewSession from "@/pages/sessions/new";
+import Vocabulary from "@/pages/vocabulary/index";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/sessions" component={Sessions} />
       <Route path="/sessions/new" component={NewSession} />
       <Route path="/sessions/:sessionId" component={SessionDetail} />
+      <Route path="/vocabulary" component={Vocabulary} />
       <Route component={NotFound} />
     </Switch>
   );

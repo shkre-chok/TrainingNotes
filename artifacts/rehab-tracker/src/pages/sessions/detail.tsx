@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useCorrections } from "@/hooks/useCorrections";
+import { LANGS } from "@/lib/langs";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExercisesSection } from "@/components/exercises/ExercisesSection";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,19 +57,17 @@ export default function SessionDetail() {
   const [isImportant, setIsImportant] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
 
-  const LANGS = [
-    { code: "he-IL", flag: "🇮🇱", label: "Hebrew" },
-    { code: "en-US", flag: "🇬🇧", label: "English" },
-  ] as const;
   const [langIndex, setLangIndex] = useState(0);
   const currentLang = LANGS[langIndex];
+  const { apply } = useCorrections();
 
   const speech = useSpeechRecognition({
     lang: currentLang.code,
     onFinalTranscript: (text) => {
+      const fixed = apply(text.trim());
       setNoteContent((prev) => {
         const trimmed = prev.trimEnd();
-        return trimmed ? `${trimmed} ${text.trim()}` : text.trim();
+        return trimmed ? `${trimmed} ${fixed}` : fixed;
       });
       setInterimTranscript("");
     },

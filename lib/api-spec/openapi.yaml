@@ -14,6 +14,7 @@ tags:
   - name: sessions
   - name: notes
   - name: exercises
+  - name: corrections
   - name: dashboard
 paths:
   /healthz:
@@ -349,6 +350,57 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/ExerciseProgress" }
 
+  /corrections:
+    get:
+      operationId: listCorrections
+      tags: [corrections]
+      responses:
+        "200":
+          description: List of corrections
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Correction" }
+    post:
+      operationId: createCorrection
+      tags: [corrections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewCorrection" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Correction" }
+  /corrections/{correctionId}:
+    put:
+      operationId: updateCorrection
+      tags: [corrections]
+      parameters:
+        - { name: correctionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorrectionUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Correction" }
+    delete:
+      operationId: deleteCorrection
+      tags: [corrections]
+      parameters:
+        - { name: correctionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204":
+          description: Deleted
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -594,6 +646,27 @@ components:
           type: array
           items: { $ref: "#/components/schemas/ExerciseProgressPoint" }
 
+    Correction:
+      type: object
+      required: [id, raw, corrected, isDefault, createdAt]
+      properties:
+        id: { type: string }
+        raw: { type: string }
+        corrected: { type: string }
+        isDefault: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    NewCorrection:
+      type: object
+      required: [raw, corrected]
+      properties:
+        raw: { type: string }
+        corrected: { type: string }
+        isDefault: { type: boolean }
+    CorrectionUpdate:
+      type: object
+      properties:
+        raw: { type: string }
+        corrected: { type: string }
     DashboardSummary:
       type: object
       required: [totalClients, totalSessions, activeGoals, achievedGoals, importantNotes, sessionsThisWeek]

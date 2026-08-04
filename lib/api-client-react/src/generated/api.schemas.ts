@@ -299,6 +299,25 @@ export interface ExerciseProgress {
   points: ExerciseProgressPoint[];
 }
 
+export interface Correction {
+  id: string;
+  raw: string;
+  corrected: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface NewCorrection {
+  raw: string;
+  corrected: string;
+  isDefault?: boolean;
+}
+
+export interface CorrectionUpdate {
+  raw?: string;
+  corrected?: string;
+}
+
 export interface DashboardSummary {
   totalClients: number;
   totalSessions: number;

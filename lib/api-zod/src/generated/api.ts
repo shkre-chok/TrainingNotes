@@ -537,6 +537,42 @@ export const GetClientExerciseProgressResponse = zod.array(
   GetClientExerciseProgressResponseItem,
 );
 
+export const ListCorrectionsResponseItem = zod.object({
+  id: zod.string(),
+  raw: zod.string(),
+  corrected: zod.string(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListCorrectionsResponse = zod.array(ListCorrectionsResponseItem);
+
+export const CreateCorrectionBody = zod.object({
+  raw: zod.string(),
+  corrected: zod.string(),
+  isDefault: zod.boolean().optional(),
+});
+
+export const UpdateCorrectionParams = zod.object({
+  correctionId: zod.coerce.string(),
+});
+
+export const UpdateCorrectionBody = zod.object({
+  raw: zod.string().optional(),
+  corrected: zod.string().optional(),
+});
+
+export const UpdateCorrectionResponse = zod.object({
+  id: zod.string(),
+  raw: zod.string(),
+  corrected: zod.string(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+export const DeleteCorrectionParams = zod.object({
+  correctionId: zod.coerce.string(),
+});
+
 export const GetDashboardSummaryResponse = zod.object({
   totalClients: zod.number(),
   totalSessions: zod.number(),

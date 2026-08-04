@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Users, Activity, Target, Home, CalendarPlus, PlusCircle } from "lucide-react";
+import { Users, Activity, Target, Home, CalendarPlus, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/sessions", label: "Sessions", icon: Activity },
   { href: "/goals", label: "Goals", icon: Target },
+  { href: "/vocabulary", label: "Vocabulary", icon: BookOpen },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {

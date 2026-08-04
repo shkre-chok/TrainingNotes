@@ -61,8 +61,17 @@ export const exercisesTable = pgTable("exercises", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const correctionsTable = pgTable("corrections", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  raw: text("raw").notNull(),
+  corrected: text("corrected").notNull(),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Client = typeof clientsTable.$inferSelect;
 export type Goal = typeof goalsTable.$inferSelect;
 export type Session = typeof sessionsTable.$inferSelect;
 export type Note = typeof notesTable.$inferSelect;
 export type Exercise = typeof exercisesTable.$inferSelect;
+export type Correction = typeof correctionsTable.$inferSelect;

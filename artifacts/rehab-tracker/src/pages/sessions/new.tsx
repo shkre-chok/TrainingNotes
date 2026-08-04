@@ -10,6 +10,8 @@ import {
   useCreateSession
 } from "@workspace/api-client-react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useCorrections } from "@/hooks/useCorrections";
+import { LANGS } from "@/lib/langs";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -60,12 +62,9 @@ export default function NewSession() {
   const [energyEnabled, setEnergyEnabled] = useState(false);
   const [interimFocus, setInterimFocus] = useState("");
 
-  const LANGS = [
-    { code: "he-IL", flag: "🇮🇱", label: "Hebrew" },
-    { code: "en-US", flag: "🇬🇧", label: "English" },
-  ] as const;
   const [focusLangIndex, setFocusLangIndex] = useState(0);
   const focusLang = LANGS[focusLangIndex];
+  const { apply } = useCorrections();
 
   const { data: clients, isLoading: isLoadingClients } = useListClients({
     query: { queryKey: getListClientsQueryKey() }
@@ -117,8 +116,9 @@ export default function NewSession() {
     continuous: false,
     interimResults: true,
     onFinalTranscript: (text) => {
+      const fixed = apply(text.trim());
       const current = form.getValues("focusArea") || "";
-      form.setValue("focusArea", (current ? current + " " : "") + text.trim());
+      form.setValue("focusArea", (current ? current + " " : "") + fixed);
       setInterimFocus("");
     },
     onInterimTranscript: (text) => setInterimFocus(text),

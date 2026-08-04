@@ -20,6 +20,8 @@ import type {
   ActivityItem,
   Client,
   ClientUpdate,
+  Correction,
+  CorrectionUpdate,
   DashboardSummary,
   Exercise,
   ExerciseProgress,
@@ -30,6 +32,7 @@ import type {
   ListGoalsParams,
   ListSessionsParams,
   NewClient,
+  NewCorrection,
   NewExercise,
   NewGoal,
   NewNote,
@@ -2041,6 +2044,313 @@ export function useGetClientExerciseProgress<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+export const getListCorrectionsUrl = () => {
+  return `/api/corrections`;
+};
+
+export const listCorrections = async (
+  options?: RequestInit,
+): Promise<Correction[]> => {
+  return customFetch<Correction[]>(getListCorrectionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCorrectionsQueryKey = () => {
+  return [`/api/corrections`] as const;
+};
+
+export const getListCorrectionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCorrections>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCorrections>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCorrectionsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCorrections>>> = ({
+    signal,
+  }) => listCorrections({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCorrections>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCorrectionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCorrections>>
+>;
+export type ListCorrectionsQueryError = ErrorType<unknown>;
+
+export function useListCorrections<
+  TData = Awaited<ReturnType<typeof listCorrections>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCorrections>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCorrectionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateCorrectionUrl = () => {
+  return `/api/corrections`;
+};
+
+export const createCorrection = async (
+  newCorrection: NewCorrection,
+  options?: RequestInit,
+): Promise<Correction> => {
+  return customFetch<Correction>(getCreateCorrectionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(newCorrection),
+  });
+};
+
+export const getCreateCorrectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCorrection>>,
+    TError,
+    { data: BodyType<NewCorrection> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCorrection>>,
+  TError,
+  { data: BodyType<NewCorrection> },
+  TContext
+> => {
+  const mutationKey = ["createCorrection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCorrection>>,
+    { data: BodyType<NewCorrection> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCorrection(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCorrectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCorrection>>
+>;
+export type CreateCorrectionMutationBody = BodyType<NewCorrection>;
+export type CreateCorrectionMutationError = ErrorType<unknown>;
+
+export const useCreateCorrection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCorrection>>,
+    TError,
+    { data: BodyType<NewCorrection> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCorrection>>,
+  TError,
+  { data: BodyType<NewCorrection> },
+  TContext
+> => {
+  return useMutation(getCreateCorrectionMutationOptions(options));
+};
+
+export const getUpdateCorrectionUrl = (correctionId: string) => {
+  return `/api/corrections/${correctionId}`;
+};
+
+export const updateCorrection = async (
+  correctionId: string,
+  correctionUpdate: CorrectionUpdate,
+  options?: RequestInit,
+): Promise<Correction> => {
+  return customFetch<Correction>(getUpdateCorrectionUrl(correctionId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(correctionUpdate),
+  });
+};
+
+export const getUpdateCorrectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCorrection>>,
+    TError,
+    { correctionId: string; data: BodyType<CorrectionUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCorrection>>,
+  TError,
+  { correctionId: string; data: BodyType<CorrectionUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateCorrection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCorrection>>,
+    { correctionId: string; data: BodyType<CorrectionUpdate> }
+  > = (props) => {
+    const { correctionId, data } = props ?? {};
+
+    return updateCorrection(correctionId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCorrectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCorrection>>
+>;
+export type UpdateCorrectionMutationBody = BodyType<CorrectionUpdate>;
+export type UpdateCorrectionMutationError = ErrorType<unknown>;
+
+export const useUpdateCorrection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCorrection>>,
+    TError,
+    { correctionId: string; data: BodyType<CorrectionUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCorrection>>,
+  TError,
+  { correctionId: string; data: BodyType<CorrectionUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateCorrectionMutationOptions(options));
+};
+
+export const getDeleteCorrectionUrl = (correctionId: string) => {
+  return `/api/corrections/${correctionId}`;
+};
+
+export const deleteCorrection = async (
+  correctionId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCorrectionUrl(correctionId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCorrectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCorrection>>,
+    TError,
+    { correctionId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCorrection>>,
+  TError,
+  { correctionId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteCorrection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCorrection>>,
+    { correctionId: string }
+  > = (props) => {
+    const { correctionId } = props ?? {};
+
+    return deleteCorrection(correctionId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCorrectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCorrection>>
+>;
+
+export type DeleteCorrectionMutationError = ErrorType<unknown>;
+
+export const useDeleteCorrection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCorrection>>,
+    TError,
+    { correctionId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCorrection>>,
+  TError,
+  { correctionId: string },
+  TContext
+> => {
+  return useMutation(getDeleteCorrectionMutationOptions(options));
+};
 
 export const getGetDashboardSummaryUrl = () => {
   return `/api/dashboard/summary`;
