@@ -18,7 +18,6 @@ import {
 
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useCorrections } from "@/hooks/useCorrections";
-import { LANGS } from "@/lib/langs";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExercisesSection } from "@/components/exercises/ExercisesSection";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,12 +56,10 @@ export default function SessionDetail() {
   const [isImportant, setIsImportant] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
 
-  const [langIndex, setLangIndex] = useState(0);
-  const currentLang = LANGS[langIndex];
   const { apply } = useCorrections();
 
   const speech = useSpeechRecognition({
-    lang: currentLang.code,
+    lang: "",
     onFinalTranscript: (text) => {
       const fixed = apply(text.trim());
       setNoteContent((prev) => {
@@ -355,34 +352,20 @@ export default function SessionDetail() {
                     value={noteContent + (interimTranscript ? (noteContent ? " " : "") + interimTranscript : "")}
                     onChange={(e) => setNoteContent(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={speech.isListening ? `Listening in ${currentLang.label}…` : "Type or dictate. Enter to save, Shift+Enter for newline."}
+                    placeholder={speech.isListening ? "Listening…" : "Type or dictate. Enter to save, Shift+Enter for newline."}
                     className="min-h-[60px] resize-none pr-28 focus-visible:ring-primary/50 text-base py-3"
                   />
                   {speech.isSupported && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          if (speech.isListening) speech.stop();
-                          setLangIndex((i) => (i + 1) % LANGS.length);
-                        }}
-                        className="absolute bottom-2 right-20 h-8 px-1.5 rounded-full text-base leading-none text-muted-foreground hover:text-foreground"
-                        title={`Switch language (current: ${currentLang.label})`}
-                      >
-                        {currentLang.flag}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant={speech.isListening ? "default" : "ghost"}
-                        onClick={toggleMic}
-                        className={`absolute bottom-2 right-12 h-8 w-8 rounded-full ${speech.isListening ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse' : 'text-muted-foreground hover:text-foreground'}`}
-                        title={speech.isListening ? "Stop dictation" : `Dictate in ${currentLang.label}`}
-                      >
-                        {speech.isListening ? <MicOff size={14} /> : <Mic size={14} />}
-                      </Button>
-                    </>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={speech.isListening ? "default" : "ghost"}
+                      onClick={toggleMic}
+                      className={`absolute bottom-2 right-12 h-8 w-8 rounded-full ${speech.isListening ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse' : 'text-muted-foreground hover:text-foreground'}`}
+                      title={speech.isListening ? "Stop dictation" : "Dictate (any language)"}
+                    >
+                      {speech.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                    </Button>
                   )}
                   <Button 
                     type="submit" 
