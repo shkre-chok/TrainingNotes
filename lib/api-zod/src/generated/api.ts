@@ -17,6 +17,8 @@ export const HealthCheckResponse = zod.object({
 export const ListClientsResponseItem = zod.object({
   id: zod.string(),
   name: zod.string(),
+  phone: zod.string().nullish(),
+  email: zod.string().nullish(),
   condition: zod.string().nullish(),
   startDate: zod.coerce.date().nullish(),
   notes: zod.string().nullish(),
@@ -26,6 +28,8 @@ export const ListClientsResponse = zod.array(ListClientsResponseItem);
 
 export const CreateClientBody = zod.object({
   name: zod.string().min(1),
+  phone: zod.string().nullish(),
+  email: zod.string().nullish(),
   condition: zod.string().nullish(),
   startDate: zod.coerce.date().nullish(),
   notes: zod.string().nullish(),
@@ -38,6 +42,8 @@ export const GetClientParams = zod.object({
 export const GetClientResponse = zod.object({
   id: zod.string(),
   name: zod.string(),
+  phone: zod.string().nullish(),
+  email: zod.string().nullish(),
   condition: zod.string().nullish(),
   startDate: zod.coerce.date().nullish(),
   notes: zod.string().nullish(),
@@ -50,6 +56,8 @@ export const UpdateClientParams = zod.object({
 
 export const UpdateClientBody = zod.object({
   name: zod.string().optional(),
+  phone: zod.string().nullish(),
+  email: zod.string().nullish(),
   condition: zod.string().nullish(),
   startDate: zod.coerce.date().nullish(),
   notes: zod.string().nullish(),
@@ -58,6 +66,8 @@ export const UpdateClientBody = zod.object({
 export const UpdateClientResponse = zod.object({
   id: zod.string(),
   name: zod.string(),
+  phone: zod.string().nullish(),
+  email: zod.string().nullish(),
   condition: zod.string().nullish(),
   startDate: zod.coerce.date().nullish(),
   notes: zod.string().nullish(),

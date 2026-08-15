@@ -4,6 +4,8 @@ import { sql } from "drizzle-orm";
 export const clientsTable = pgTable("clients", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
   condition: text("condition"),
   startDate: date("start_date"),
   notes: text("notes"),

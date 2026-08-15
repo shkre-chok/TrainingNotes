@@ -452,6 +452,8 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
         condition: { type: string, nullable: true }
         startDate: { type: string, format: date, nullable: true }
         notes: { type: string, nullable: true }
@@ -461,6 +463,8 @@ components:
       required: [name]
       properties:
         name: { type: string, minLength: 1 }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
         condition: { type: string, nullable: true }
         startDate: { type: string, format: date, nullable: true }
         notes: { type: string, nullable: true }
@@ -468,6 +472,8 @@ components:
       type: object
       properties:
         name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
         condition: { type: string, nullable: true }
         startDate: { type: string, format: date, nullable: true }
         notes: { type: string, nullable: true }

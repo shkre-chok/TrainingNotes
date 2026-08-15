@@ -8,6 +8,8 @@
 
 export interface ClientUpdate {
   name?: string;
+  phone?: string | null;
+  email?: string | null;
   condition?: string | null;
   startDate?: Date | null;
   notes?: string | null;

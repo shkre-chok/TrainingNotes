@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Users, Plus, Search, Calendar, Activity, ChevronRight, UserCircle } from "lucide-react";
+import { Users, Plus, Search, Calendar, ChevronRight, UserCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { 
   useListClients, 
@@ -37,6 +37,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  phone: z.string().optional(),
+  email: z.string().optional(),
   condition: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -64,6 +66,8 @@ export default function Clients() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: "",
+      phone: "",
+      email: "",
       condition: "",
       notes: "",
     },
@@ -73,6 +77,8 @@ export default function Clients() {
     createClient.mutate({
       data: {
         name: values.name,
+        phone: values.phone || undefined,
+        email: values.email || undefined,
         condition: values.condition,
         notes: values.notes,
         startDate: new Date().toISOString()
@@ -119,6 +125,34 @@ export default function Clients() {
                       </FormItem>
                     )}
                   />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+972 50 000 0000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="client@email.com" type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="condition"

@@ -15,6 +15,8 @@ function serialize(c: typeof clientsTable.$inferSelect) {
   return {
     id: c.id,
     name: c.name,
+    phone: c.phone,
+    email: c.email,
     condition: c.condition,
     startDate: c.startDate,
     notes: c.notes,
@@ -31,6 +33,8 @@ router.post("/clients", async (req, res) => {
   const body = CreateClientBody.parse(req.body);
   const [row] = await db.insert(clientsTable).values({
     name: body.name,
+    phone: body.phone ?? null,
+    email: body.email ?? null,
     condition: body.condition ?? null,
     startDate: toDateStr(body.startDate),
     notes: body.notes ?? null,
@@ -53,6 +57,8 @@ router.patch("/clients/:clientId", async (req: Request, res: Response) => {
   const body = UpdateClientBody.parse(req.body);
   const [row] = await db.update(clientsTable).set({
     ...(body.name !== undefined && { name: body.name }),
+    ...(body.phone !== undefined && { phone: body.phone }),
+    ...(body.email !== undefined && { email: body.email }),
     ...(body.condition !== undefined && { condition: body.condition }),
     ...(body.startDate !== undefined && { startDate: toDateStr(body.startDate) }),
     ...(body.notes !== undefined && { notes: body.notes }),

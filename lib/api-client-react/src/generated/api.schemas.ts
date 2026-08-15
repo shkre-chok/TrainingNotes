@@ -12,6 +12,8 @@ export interface HealthStatus {
 export interface Client {
   id: string;
   name: string;
+  phone?: string | null;
+  email?: string | null;
   condition?: string | null;
   startDate?: string | null;
   notes?: string | null;
@@ -21,6 +23,8 @@ export interface Client {
 export interface NewClient {
   /** @minLength 1 */
   name: string;
+  phone?: string | null;
+  email?: string | null;
   condition?: string | null;
   startDate?: string | null;
   notes?: string | null;
@@ -28,6 +32,8 @@ export interface NewClient {
 
 export interface ClientUpdate {
   name?: string;
+  phone?: string | null;
+  email?: string | null;
   condition?: string | null;
   startDate?: string | null;
   notes?: string | null;

@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
   ArrowLeft, UserCircle, Calendar, Target, Activity, 
-  Plus, Edit3, Clock, TrendingUp
+  Plus, Edit3, Clock, TrendingUp, Phone, Mail
 } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -170,6 +170,23 @@ export default function ClientDetail() {
                 </Button>
               </div>
               
+              {(client.phone || client.email) && (
+                <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  {client.phone && (
+                    <a href={`tel:${client.phone}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+                      <Phone size={14} className="opacity-70" />
+                      {client.phone}
+                    </a>
+                  )}
+                  {client.email && (
+                    <a href={`mailto:${client.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+                      <Mail size={14} className="opacity-70" />
+                      {client.email}
+                    </a>
+                  )}
+                </div>
+              )}
+
               {client.notes && (
                 <div className="mt-4 p-4 rounded-md bg-muted/30 border border-border/50 text-sm text-foreground/80 leading-relaxed">
                   {client.notes}
