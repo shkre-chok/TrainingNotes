@@ -187,8 +187,11 @@ export function ExercisesSection({ sessionId }: Props) {
     e.preventDefault();
     if (!name.trim()) return;
     const cleaned = sets
-      .map((s) => ({ weight: parseFloat(s.weight), reps: parseInt(s.reps, 10) }))
-      .filter((s) => !isNaN(s.weight) && !isNaN(s.reps) && s.reps > 0);
+      .map((s) => ({
+        weight: s.weight === "" ? 0 : parseFloat(s.weight),
+        reps: parseInt(s.reps, 10),
+      }))
+      .filter((s) => !isNaN(s.reps) && s.reps > 0);
     if (cleaned.length === 0) return;
     createExercise.mutate({
       sessionId,
