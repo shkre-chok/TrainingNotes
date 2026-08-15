@@ -170,10 +170,10 @@ export default function SessionDetail() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)]">
+      <div className="flex flex-col gap-6 pb-6">
         
         {/* Header Area */}
-        <div className="shrink-0 mb-6">
+        <div>
           <Link href={`/clients/${session.clientId}`}>
             <Button variant="ghost" size="sm" className="-ml-2 mb-2 text-muted-foreground hover:text-foreground">
               <ArrowLeft size={16} className="mr-1" /> Back to {session.clientName}
@@ -232,10 +232,16 @@ export default function SessionDetail() {
           )}
         </div>
 
-        <ExercisesSection sessionId={sessionId} />
+        {/* Body: two columns on desktop, stacked on mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-[360px_1fr] gap-6 items-start">
 
-        {/* Notes Timeline Area */}
-        <Card className="flex-1 flex flex-col min-h-0 border-border/50 shadow-sm overflow-hidden">
+          {/* Exercises column — scrolls independently on desktop */}
+          <div className="md:overflow-y-auto md:max-h-[calc(100vh-18rem)]">
+            <ExercisesSection sessionId={sessionId} />
+          </div>
+
+          {/* Notes column — fixed height with internal scroll on desktop */}
+          <Card className="flex flex-col overflow-hidden border-border/50 shadow-sm min-h-[450px] md:h-[calc(100vh-14rem)]">
           <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-accent/20">
             {isLoadingNotes ? (
               <div className="space-y-6">
@@ -386,6 +392,7 @@ export default function SessionDetail() {
             </form>
           </div>
         </Card>
+        </div>{/* end grid */}
       </div>
     </AppLayout>
   );
