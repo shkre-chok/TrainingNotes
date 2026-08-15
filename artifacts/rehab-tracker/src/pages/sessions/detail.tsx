@@ -59,7 +59,7 @@ export default function SessionDetail() {
   const { apply } = useCorrections();
 
   const speech = useSpeechRecognition({
-    lang: "",
+    lang: "he-IL",
     onFinalTranscript: (text) => {
       const fixed = apply(text.trim());
       setNoteContent((prev) => {

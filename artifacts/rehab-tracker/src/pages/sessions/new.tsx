@@ -109,7 +109,7 @@ export default function NewSession() {
 
   // Voice for Focus Area
   const voiceFocus = useSpeechRecognition({
-    lang: "",
+    lang: "he-IL",
     continuous: false,
     interimResults: true,
     onFinalTranscript: (text) => {
