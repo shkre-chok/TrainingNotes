@@ -242,80 +242,9 @@ export default function SessionDetail() {
 
           {/* Notes column — fixed height with internal scroll on desktop */}
           <Card className="flex flex-col overflow-hidden border-border/50 shadow-sm min-h-[450px] md:h-[calc(100vh-14rem)]">
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-accent/20">
-            {isLoadingNotes ? (
-              <div className="space-y-6">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex gap-4">
-                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-16 w-full md:w-2/3 rounded-lg" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : sortedNotes.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                <MessageSquare className="h-10 w-10 mb-3 opacity-20" />
-                <p className="text-sm">No notes captured yet.</p>
-                <p className="text-xs opacity-70 mt-1">Use the input below to log observations during the session.</p>
-              </div>
-            ) : (
-              <div className="space-y-6 md:space-y-8">
-                {sortedNotes.map((note) => {
-                  const style = noteStyleMap[note.kind as keyof typeof noteStyleMap] || noteStyleMap.observation;
-                  const Icon = style.icon;
-                  
-                  return (
-                    <div key={note.id} className="flex gap-3 md:gap-4 group">
-                      <div className={`shrink-0 mt-1 flex flex-col items-center gap-1`}>
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${style.bg} ${style.color}`}>
-                          <Icon size={14} />
-                        </div>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0 max-w-2xl">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            {note.kind}
-                          </span>
-                          <span className="text-xs text-muted-foreground/60">
-                            {format(parseISO(note.createdAt), 'h:mm a')}
-                          </span>
-                          {note.important && (
-                            <Badge variant="destructive" className="h-4 text-[10px] px-1 py-0 ml-1 rounded-sm uppercase tracking-widest font-bold">
-                              Flagged
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <div className={`p-3 md:p-4 rounded-xl text-sm md:text-base border shadow-sm relative group-hover:border-foreground/20 transition-colors
-                          ${note.important ? 'bg-destructive/5 border-destructive/20 text-foreground' : `bg-card ${style.border} text-foreground/90`}
-                        `}>
-                          <p dir="auto" className="whitespace-pre-wrap break-words">{note.content}</p>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-background border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteNote.mutate({ noteId: note.id })}
-                            title="Delete note"
-                          >
-                            <Trash2 size={12} />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={notesEndRef} />
-              </div>
-            )}
-          </div>
 
-          {/* Fast Capture Input */}
-          <div className="shrink-0 border-t border-border/50 bg-card p-3 md:p-4">
+          {/* Fast Capture Input — top */}
+          <div className="shrink-0 border-b border-border/50 bg-card p-3 md:p-4">
             <form onSubmit={handleCreateNote} className="max-w-4xl mx-auto flex gap-3">
               <div className="flex-1 flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-2 md:gap-4">
@@ -390,6 +319,79 @@ export default function SessionDetail() {
                 )}
               </div>
             </form>
+          </div>
+
+          {/* Notes Timeline — bottom, scrollable */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-accent/20">
+            {isLoadingNotes ? (
+              <div className="space-y-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-16 w-full md:w-2/3 rounded-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : sortedNotes.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                <MessageSquare className="h-10 w-10 mb-3 opacity-20" />
+                <p className="text-sm">No notes captured yet.</p>
+                <p className="text-xs opacity-70 mt-1">Record or type above to log observations.</p>
+              </div>
+            ) : (
+              <div className="space-y-6 md:space-y-8">
+                {sortedNotes.map((note) => {
+                  const style = noteStyleMap[note.kind as keyof typeof noteStyleMap] || noteStyleMap.observation;
+                  const Icon = style.icon;
+                  
+                  return (
+                    <div key={note.id} className="flex gap-3 md:gap-4 group">
+                      <div className={`shrink-0 mt-1 flex flex-col items-center gap-1`}>
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${style.bg} ${style.color}`}>
+                          <Icon size={14} />
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 max-w-2xl">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            {note.kind}
+                          </span>
+                          <span className="text-xs text-muted-foreground/60">
+                            {format(parseISO(note.createdAt), 'h:mm a')}
+                          </span>
+                          {note.important && (
+                            <Badge variant="destructive" className="h-4 text-[10px] px-1 py-0 ml-1 rounded-sm uppercase tracking-widest font-bold">
+                              Flagged
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className={`p-3 md:p-4 rounded-xl text-sm md:text-base border shadow-sm relative group-hover:border-foreground/20 transition-colors
+                          ${note.important ? 'bg-destructive/5 border-destructive/20 text-foreground' : `bg-card ${style.border} text-foreground/90`}
+                        `}>
+                          <p dir="auto" className="whitespace-pre-wrap break-words">{note.content}</p>
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-background border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteNote.mutate({ noteId: note.id })}
+                            title="Delete note"
+                          >
+                            <Trash2 size={12} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={notesEndRef} />
+              </div>
+            )}
           </div>
         </Card>
         </div>{/* end grid */}
