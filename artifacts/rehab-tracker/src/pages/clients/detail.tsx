@@ -5,7 +5,8 @@ import {
   useGetClient, getGetClientQueryKey,
   useListGoals, getListGoalsQueryKey,
   useListSessions, getListSessionsQueryKey,
-  useCreateGoal
+  useCreateGoal,
+  useUpdateClient,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -50,11 +51,21 @@ const goalSchema = z.object({
   targetDate: z.string().optional(),
 });
 
+const editClientSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  condition: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  startDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 export default function ClientDetail() {
   const params = useParams();
   const clientId = params.clientId || "";
   const queryClient = useQueryClient();
   const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
+  const [isEditClientOpen, setIsEditClientOpen] = useState(false);
 
   const { data: client, isLoading: isLoadingClient } = useGetClient(clientId, {
     query: { enabled: !!clientId, queryKey: getGetClientQueryKey(clientId) }
@@ -67,6 +78,33 @@ export default function ClientDetail() {
   const { data: sessions, isLoading: isLoadingSessions } = useListSessions({ clientId }, {
     query: { enabled: !!clientId, queryKey: getListSessionsQueryKey({ clientId }) }
   });
+
+  const editClientForm = useForm<z.infer<typeof editClientSchema>>({
+    resolver: zodResolver(editClientSchema),
+    defaultValues: { name: "", condition: "", phone: "", email: "", startDate: "", notes: "" },
+  });
+
+  const updateClient = useUpdateClient({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetClientQueryKey(clientId) });
+        setIsEditClientOpen(false);
+      },
+    },
+  });
+
+  function openEditClient() {
+    if (!client) return;
+    editClientForm.reset({
+      name: client.name ?? "",
+      condition: client.condition ?? "",
+      phone: client.phone ?? "",
+      email: client.email ?? "",
+      startDate: client.startDate ? client.startDate.slice(0, 10) : (client.createdAt ? client.createdAt.slice(0, 10) : ""),
+      notes: client.notes ?? "",
+    });
+    setIsEditClientOpen(true);
+  }
 
   const createGoal = useCreateGoal({
     mutation: {
@@ -166,7 +204,7 @@ export default function ClientDetail() {
                     </span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="hidden sm:flex border-border/50">
+                <Button variant="outline" size="sm" className="hidden sm:flex border-border/50" onClick={openEditClient}>
                   <Edit3 size={14} className="mr-2" /> Edit Profile
                 </Button>
               </div>
@@ -424,6 +462,79 @@ export default function ClientDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={isEditClientOpen} onOpenChange={setIsEditClientOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Edit Client Profile</DialogTitle>
+          </DialogHeader>
+          <Form {...editClientForm}>
+            <form onSubmit={editClientForm.handleSubmit((values) =>
+              updateClient.mutate({
+                clientId,
+                data: {
+                  name: values.name,
+                  condition: values.condition || undefined,
+                  phone: values.phone || undefined,
+                  email: values.email || undefined,
+                  startDate: values.startDate || undefined,
+                  notes: values.notes || undefined,
+                },
+              })
+            )} className="space-y-4 pt-2">
+              <FormField control={editClientForm.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl><Input placeholder="Client name" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={editClientForm.control} name="condition" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Condition / Diagnosis</FormLabel>
+                  <FormControl><Input placeholder="e.g. Post-ACL reconstruction" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={editClientForm.control} name="phone" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl><Input placeholder="+972..." {...field} /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={editClientForm.control} name="startDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={editClientForm.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input type="email" placeholder="client@email.com" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={editClientForm.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Background, observations…" className="min-h-[80px]" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditClientOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={updateClient.isPending}>
+                  {updateClient.isPending ? "Saving…" : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
