@@ -11,6 +11,7 @@ import Sessions from "@/pages/sessions/index";
 import SessionDetail from "@/pages/sessions/detail";
 import NewSession from "@/pages/sessions/new";
 import Vocabulary from "@/pages/vocabulary/index";
+import VideoLibrary from "@/pages/video-library/index";
 import HomeworkView from "@/pages/homework/view";
 import NotFound from "@/pages/not-found";
 
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/sessions/new" component={NewSession} />
       <Route path="/sessions/:sessionId" component={SessionDetail} />
       <Route path="/vocabulary" component={Vocabulary} />
+      <Route path="/video-library" component={VideoLibrary} />
       <Route path="/homework/:token" component={HomeworkView} />
       <Route component={NotFound} />
     </Switch>

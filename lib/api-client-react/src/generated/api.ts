@@ -45,6 +45,7 @@ import type {
   NewHomeworkProgram,
   NewNote,
   NewSession,
+  NewVideoLibraryItem,
   Note,
   NoteUpdate,
   SendHomeworkReminder200,
@@ -53,6 +54,8 @@ import type {
   SessionUpdate,
   UploadUrlRequest,
   UploadUrlResponse,
+  VideoLibraryItem,
+  VideoLibraryItemUpdate,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2651,6 +2654,314 @@ export const useRequestUploadUrl = <
   TContext
 > => {
   return useMutation(getRequestUploadUrlMutationOptions(options));
+};
+
+export const getListVideoLibraryUrl = () => {
+  return `/api/video-library`;
+};
+
+export const listVideoLibrary = async (
+  options?: RequestInit,
+): Promise<VideoLibraryItem[]> => {
+  return customFetch<VideoLibraryItem[]>(getListVideoLibraryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVideoLibraryQueryKey = () => {
+  return [`/api/video-library`] as const;
+};
+
+export const getListVideoLibraryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVideoLibrary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listVideoLibrary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListVideoLibraryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listVideoLibrary>>
+  > = ({ signal }) => listVideoLibrary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVideoLibrary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVideoLibraryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVideoLibrary>>
+>;
+export type ListVideoLibraryQueryError = ErrorType<unknown>;
+
+export function useListVideoLibrary<
+  TData = Awaited<ReturnType<typeof listVideoLibrary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listVideoLibrary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVideoLibraryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateVideoLibraryItemUrl = () => {
+  return `/api/video-library`;
+};
+
+export const createVideoLibraryItem = async (
+  newVideoLibraryItem: NewVideoLibraryItem,
+  options?: RequestInit,
+): Promise<VideoLibraryItem> => {
+  return customFetch<VideoLibraryItem>(getCreateVideoLibraryItemUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(newVideoLibraryItem),
+  });
+};
+
+export const getCreateVideoLibraryItemMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVideoLibraryItem>>,
+    TError,
+    { data: BodyType<NewVideoLibraryItem> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createVideoLibraryItem>>,
+  TError,
+  { data: BodyType<NewVideoLibraryItem> },
+  TContext
+> => {
+  const mutationKey = ["createVideoLibraryItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createVideoLibraryItem>>,
+    { data: BodyType<NewVideoLibraryItem> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createVideoLibraryItem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateVideoLibraryItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createVideoLibraryItem>>
+>;
+export type CreateVideoLibraryItemMutationBody = BodyType<NewVideoLibraryItem>;
+export type CreateVideoLibraryItemMutationError = ErrorType<unknown>;
+
+export const useCreateVideoLibraryItem = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVideoLibraryItem>>,
+    TError,
+    { data: BodyType<NewVideoLibraryItem> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createVideoLibraryItem>>,
+  TError,
+  { data: BodyType<NewVideoLibraryItem> },
+  TContext
+> => {
+  return useMutation(getCreateVideoLibraryItemMutationOptions(options));
+};
+
+export const getUpdateVideoLibraryItemUrl = (videoId: string) => {
+  return `/api/video-library/${videoId}`;
+};
+
+export const updateVideoLibraryItem = async (
+  videoId: string,
+  videoLibraryItemUpdate: VideoLibraryItemUpdate,
+  options?: RequestInit,
+): Promise<VideoLibraryItem> => {
+  return customFetch<VideoLibraryItem>(getUpdateVideoLibraryItemUrl(videoId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(videoLibraryItemUpdate),
+  });
+};
+
+export const getUpdateVideoLibraryItemMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateVideoLibraryItem>>,
+    TError,
+    { videoId: string; data: BodyType<VideoLibraryItemUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateVideoLibraryItem>>,
+  TError,
+  { videoId: string; data: BodyType<VideoLibraryItemUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateVideoLibraryItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateVideoLibraryItem>>,
+    { videoId: string; data: BodyType<VideoLibraryItemUpdate> }
+  > = (props) => {
+    const { videoId, data } = props ?? {};
+
+    return updateVideoLibraryItem(videoId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateVideoLibraryItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateVideoLibraryItem>>
+>;
+export type UpdateVideoLibraryItemMutationBody =
+  BodyType<VideoLibraryItemUpdate>;
+export type UpdateVideoLibraryItemMutationError = ErrorType<unknown>;
+
+export const useUpdateVideoLibraryItem = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateVideoLibraryItem>>,
+    TError,
+    { videoId: string; data: BodyType<VideoLibraryItemUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateVideoLibraryItem>>,
+  TError,
+  { videoId: string; data: BodyType<VideoLibraryItemUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateVideoLibraryItemMutationOptions(options));
+};
+
+export const getDeleteVideoLibraryItemUrl = (videoId: string) => {
+  return `/api/video-library/${videoId}`;
+};
+
+export const deleteVideoLibraryItem = async (
+  videoId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteVideoLibraryItemUrl(videoId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteVideoLibraryItemMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVideoLibraryItem>>,
+    TError,
+    { videoId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteVideoLibraryItem>>,
+  TError,
+  { videoId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteVideoLibraryItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteVideoLibraryItem>>,
+    { videoId: string }
+  > = (props) => {
+    const { videoId } = props ?? {};
+
+    return deleteVideoLibraryItem(videoId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteVideoLibraryItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteVideoLibraryItem>>
+>;
+
+export type DeleteVideoLibraryItemMutationError = ErrorType<unknown>;
+
+export const useDeleteVideoLibraryItem = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVideoLibraryItem>>,
+    TError,
+    { videoId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteVideoLibraryItem>>,
+  TError,
+  { videoId: string },
+  TContext
+> => {
+  return useMutation(getDeleteVideoLibraryItemMutationOptions(options));
 };
 
 export const getListHomeworkProgramsUrl = (

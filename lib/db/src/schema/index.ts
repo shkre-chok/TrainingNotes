@@ -88,12 +88,22 @@ export const homeworkExercisesTable = pgTable("homework_exercises", {
   reps: integer("reps"),
   weight: integer("weight"),
   unit: text("unit").notNull().default("kg"),
+  durationSeconds: integer("duration_seconds"), // how long each set/round lasts
   frequencyType: text("frequency_type").notNull().default("daily"), // daily | specific_days | times_per_week
   daysOfWeek: jsonb("days_of_week").$type<number[]>().notNull().default(sql`'[]'::jsonb`),
   timesPerDay: integer("times_per_day").notNull().default(1),
   videoUrl: text("video_url"),
   instructions: text("instructions"),
   position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const videoLibraryTable = pgTable("video_library", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description"),
+  url: text("url").notNull(),
+  tags: jsonb("tags").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

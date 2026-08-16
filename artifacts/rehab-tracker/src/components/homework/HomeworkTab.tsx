@@ -17,6 +17,7 @@ import {
   useUpdateHomeworkExercise,
   useDeleteHomeworkExercise,
   useSendHomeworkReminder,
+  useListVideoLibrary, getListVideoLibraryQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,8 @@ const exerciseSchema = z.object({
   reps: z.coerce.number().int().optional().or(z.literal("")),
   weight: z.coerce.number().int().optional().or(z.literal("")),
   unit: z.string().default("kg"),
+  durationMins: z.coerce.number().int().min(0).optional().or(z.literal("")),
+  durationSecs: z.coerce.number().int().min(0).max(59).optional().or(z.literal("")),
   frequencyType: z.enum(["daily", "specific_days", "times_per_week"]).default("daily"),
   daysOfWeek: z.array(z.number()).default([]),
   timesPerDay: z.coerce.number().int().default(1),
@@ -83,11 +86,17 @@ function ExerciseDialog({
   defaultValues?: Partial<ExerciseFormValues>;
   isPending?: boolean;
 }) {
+  const [showLibrary, setShowLibrary] = useState(false);
+  const { data: libraryVideos } = useListVideoLibrary({
+    query: { queryKey: getListVideoLibraryQueryKey() },
+  });
+
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseSchema),
     defaultValues: {
       name: "", sets: undefined, reps: undefined, weight: undefined,
-      unit: "kg", frequencyType: "daily", daysOfWeek: [], timesPerDay: 1,
+      unit: "kg", durationMins: undefined, durationSecs: undefined,
+      frequencyType: "daily", daysOfWeek: [], timesPerDay: 1,
       videoUrl: "", instructions: "",
       ...defaultValues,
     },
@@ -95,6 +104,7 @@ function ExerciseDialog({
 
   const freqType = form.watch("frequencyType");
   const daysOfWeek = form.watch("daysOfWeek");
+  const currentVideoUrl = form.watch("videoUrl");
 
   function toggleDay(day: number) {
     const current = daysOfWeek ?? [];
@@ -104,7 +114,7 @@ function ExerciseDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif">{defaultValues?.name ? "Edit Exercise" : "Add Exercise"}</DialogTitle>
         </DialogHeader>
@@ -118,6 +128,7 @@ function ExerciseDialog({
               </FormItem>
             )} />
 
+            {/* Sets / Reps / Weight */}
             <div className="grid grid-cols-3 gap-3">
               <FormField control={form.control} name="sets" render={({ field }) => (
                 <FormItem>
@@ -133,12 +144,41 @@ function ExerciseDialog({
               )} />
               <FormField control={form.control} name="weight" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Weight</FormLabel>
+                  <FormLabel>Weight (kg)</FormLabel>
                   <FormControl><Input type="number" min={0} placeholder="0" {...field} value={field.value ?? ""} /></FormControl>
                 </FormItem>
               )} />
             </div>
 
+            {/* Duration */}
+            <div>
+              <p className="text-sm font-medium mb-2">Duration per set (optional)</p>
+              <div className="flex items-center gap-2">
+                <FormField control={form.control} name="durationMins" render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <div className="relative">
+                        <Input type="number" min={0} placeholder="0" {...field} value={field.value ?? ""} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )} />
+                <span className="text-muted-foreground text-sm">:</span>
+                <FormField control={form.control} name="durationSecs" render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <div className="relative">
+                        <Input type="number" min={0} max={59} placeholder="0" {...field} value={field.value ?? ""} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">sec</span>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+
+            {/* Frequency */}
             <FormField control={form.control} name="frequencyType" render={({ field }) => (
               <FormItem>
                 <FormLabel>Frequency</FormLabel>
@@ -187,15 +227,40 @@ function ExerciseDialog({
               </FormItem>
             )} />
 
-            <FormField control={form.control} name="videoUrl" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Video URL (optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://youtube.com/watch?v=…" {...field} value={field.value ?? ""} />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">YouTube, Vimeo, or any direct video link</p>
-              </FormItem>
-            )} />
+            {/* Video — pick from library or paste URL */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">Video (optional)</p>
+                {(libraryVideos?.length ?? 0) > 0 && (
+                  <button type="button"
+                    onClick={() => setShowLibrary(v => !v)}
+                    className="text-xs text-primary hover:underline">
+                    {showLibrary ? "Hide library" : `Pick from library (${libraryVideos!.length})`}
+                  </button>
+                )}
+              </div>
+
+              {showLibrary && libraryVideos && libraryVideos.length > 0 && (
+                <div className="border border-border/60 rounded-lg max-h-44 overflow-y-auto divide-y divide-border/40">
+                  {libraryVideos.map(v => (
+                    <button key={v.id} type="button"
+                      onClick={() => { form.setValue("videoUrl", v.url); setShowLibrary(false); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm hover:bg-accent transition-colors flex items-center justify-between gap-2 ${currentVideoUrl === v.url ? "bg-primary/5 text-primary font-medium" : ""}`}>
+                      <span className="truncate">{v.title}</span>
+                      {currentVideoUrl === v.url && <span className="text-xs text-primary shrink-0">✓ selected</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <FormField control={form.control} name="videoUrl" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="https://youtube.com/watch?v=… or pick from library above" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                </FormItem>
+              )} />
+            </div>
 
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
@@ -238,8 +303,16 @@ function ExerciseCard({
     mutation: { onSuccess: onDeleted },
   });
 
-  const vol = [ex.sets && `${ex.sets} sets`, ex.reps && `${ex.reps} reps`, ex.weight && `${ex.weight} ${ex.unit}`]
-    .filter(Boolean).join(" · ");
+  const vol = [
+    ex.sets && `${ex.sets} sets`,
+    ex.reps && `${ex.reps} reps`,
+    ex.weight && `${ex.weight} ${ex.unit}`,
+    ex.durationSeconds != null && (() => {
+      const m = Math.floor(ex.durationSeconds / 60);
+      const s = ex.durationSeconds % 60;
+      return m > 0 ? (s > 0 ? `${m}m ${s}s` : `${m}min`) : `${s}s`;
+    })(),
+  ].filter(Boolean).join(" · ");
 
   return (
     <>
@@ -295,11 +368,16 @@ function ExerciseCard({
         defaultValues={{
           name: ex.name, sets: ex.sets ?? undefined, reps: ex.reps ?? undefined,
           weight: ex.weight ?? undefined, unit: ex.unit,
+          durationMins: ex.durationSeconds != null ? Math.floor(ex.durationSeconds / 60) : undefined,
+          durationSecs: ex.durationSeconds != null ? ex.durationSeconds % 60 : undefined,
           frequencyType: ex.frequencyType, daysOfWeek: ex.daysOfWeek ?? [],
           timesPerDay: ex.timesPerDay, videoUrl: ex.videoUrl ?? "",
           instructions: ex.instructions ?? "",
         }}
-        onSave={(values) =>
+        onSave={(values) => {
+          const mins = Number(values.durationMins) || 0;
+          const secs = Number(values.durationSecs) || 0;
+          const durationSeconds = mins * 60 + secs || null;
           updateEx.mutate({
             exerciseId: ex.id,
             data: {
@@ -308,14 +386,15 @@ function ExerciseCard({
               reps: values.reps ? Number(values.reps) : null,
               weight: values.weight ? Number(values.weight) : null,
               unit: values.unit,
+              durationSeconds,
               frequencyType: values.frequencyType,
               daysOfWeek: values.daysOfWeek,
               timesPerDay: values.timesPerDay,
               videoUrl: values.videoUrl || null,
               instructions: values.instructions || null,
             },
-          })
-        }
+          });
+        }}
       />
     </>
   );
@@ -423,7 +502,10 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
         open={addOpen}
         onClose={() => setAddOpen(false)}
         isPending={createEx.isPending}
-        onSave={(values) =>
+        onSave={(values) => {
+          const mins = Number(values.durationMins) || 0;
+          const secs = Number(values.durationSecs) || 0;
+          const durationSeconds = mins * 60 + secs || null;
           createEx.mutate({
             programId: program.id,
             data: {
@@ -432,14 +514,15 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
               reps: values.reps ? Number(values.reps) : null,
               weight: values.weight ? Number(values.weight) : null,
               unit: values.unit,
+              durationSeconds,
               frequencyType: values.frequencyType,
               daysOfWeek: values.daysOfWeek,
               timesPerDay: values.timesPerDay,
               videoUrl: values.videoUrl || null,
               instructions: values.instructions || null,
             },
-          })
-        }
+          });
+        }}
       />
     </div>
   );

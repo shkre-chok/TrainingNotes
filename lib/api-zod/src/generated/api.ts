@@ -659,6 +659,47 @@ export const RequestUploadUrlResponse = zod.object({
     .nullish(),
 });
 
+export const ListVideoLibraryResponseItem = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  url: zod.string(),
+  tags: zod.array(zod.string()),
+  createdAt: zod.coerce.date(),
+});
+export const ListVideoLibraryResponse = zod.array(ListVideoLibraryResponseItem);
+
+export const CreateVideoLibraryItemBody = zod.object({
+  title: zod.string(),
+  description: zod.string().nullish(),
+  url: zod.string(),
+  tags: zod.array(zod.string()).optional(),
+});
+
+export const UpdateVideoLibraryItemParams = zod.object({
+  videoId: zod.coerce.string(),
+});
+
+export const UpdateVideoLibraryItemBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().nullish(),
+  url: zod.string().optional(),
+  tags: zod.array(zod.string()).optional(),
+});
+
+export const UpdateVideoLibraryItemResponse = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  url: zod.string(),
+  tags: zod.array(zod.string()),
+  createdAt: zod.coerce.date(),
+});
+
+export const DeleteVideoLibraryItemParams = zod.object({
+  videoId: zod.coerce.string(),
+});
+
 export const ListHomeworkProgramsQueryParams = zod.object({
   clientId: zod.coerce.string(),
 });
@@ -729,6 +770,7 @@ export const ListHomeworkExercisesResponseItem = zod.object({
   reps: zod.number().nullish(),
   weight: zod.number().nullish(),
   unit: zod.string().optional(),
+  durationSeconds: zod.number().nullish(),
   frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
   daysOfWeek: zod.array(zod.number()),
   timesPerWeek: zod.number().nullish(),
@@ -752,6 +794,7 @@ export const CreateHomeworkExerciseBody = zod.object({
   reps: zod.number().nullish(),
   weight: zod.number().nullish(),
   unit: zod.string().optional(),
+  durationSeconds: zod.number().nullish(),
   frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
   daysOfWeek: zod.array(zod.number()).optional(),
   timesPerWeek: zod.number().nullish(),
@@ -771,6 +814,7 @@ export const UpdateHomeworkExerciseBody = zod.object({
   reps: zod.number().nullish(),
   weight: zod.number().nullish(),
   unit: zod.string().optional(),
+  durationSeconds: zod.number().nullish(),
   frequencyType: zod
     .enum(["daily", "specific_days", "times_per_week"])
     .optional(),
@@ -790,6 +834,7 @@ export const UpdateHomeworkExerciseResponse = zod.object({
   reps: zod.number().nullish(),
   weight: zod.number().nullish(),
   unit: zod.string().optional(),
+  durationSeconds: zod.number().nullish(),
   frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
   daysOfWeek: zod.array(zod.number()),
   timesPerWeek: zod.number().nullish(),
@@ -836,6 +881,7 @@ export const GetHomeworkViewResponse = zod.object({
           reps: zod.number().nullish(),
           weight: zod.number().nullish(),
           unit: zod.string().optional(),
+          durationSeconds: zod.number().nullish(),
           frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
           daysOfWeek: zod.array(zod.number()),
           timesPerWeek: zod.number().nullish(),

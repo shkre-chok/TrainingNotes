@@ -13,6 +13,7 @@ export interface HomeworkExerciseUpdate {
   reps?: number | null;
   weight?: number | null;
   unit?: string;
+  durationSeconds?: number | null;
   frequencyType?: HomeworkExerciseUpdateFrequencyType;
   daysOfWeek?: number[];
   timesPerWeek?: number | null;

@@ -9,6 +9,7 @@ import correctionsRouter from "./corrections";
 import dashboardRouter from "./dashboard";
 import homeworkRouter from "./homework";
 import storageRouter from "./storage";
+import videoLibraryRouter from "./videoLibrary";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(correctionsRouter);
 router.use(dashboardRouter);
 router.use(homeworkRouter);
 router.use(storageRouter);
+router.use(videoLibraryRouter);
 
 export default router;

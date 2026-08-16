@@ -409,6 +409,7 @@ export interface HomeworkExercise {
   reps?: number | null;
   weight?: number | null;
   unit?: string;
+  durationSeconds?: number | null;
   frequencyType: HomeworkExerciseFrequencyType;
   daysOfWeek: number[];
   timesPerWeek?: number | null;
@@ -434,6 +435,7 @@ export interface NewHomeworkExercise {
   reps?: number | null;
   weight?: number | null;
   unit?: string;
+  durationSeconds?: number | null;
   frequencyType: NewHomeworkExerciseFrequencyType;
   daysOfWeek?: number[];
   timesPerWeek?: number | null;
@@ -458,6 +460,7 @@ export interface HomeworkExerciseUpdate {
   reps?: number | null;
   weight?: number | null;
   unit?: string;
+  durationSeconds?: number | null;
   frequencyType?: HomeworkExerciseUpdateFrequencyType;
   daysOfWeek?: number[];
   timesPerWeek?: number | null;
@@ -465,6 +468,29 @@ export interface HomeworkExerciseUpdate {
   videoUrl?: string | null;
   instructions?: string | null;
   position?: number;
+}
+
+export interface VideoLibraryItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  url: string;
+  tags: string[];
+  createdAt: string;
+}
+
+export interface NewVideoLibraryItem {
+  title: string;
+  description?: string | null;
+  url: string;
+  tags?: string[];
+}
+
+export interface VideoLibraryItemUpdate {
+  title?: string;
+  description?: string | null;
+  url?: string;
+  tags?: string[];
 }
 
 export type HomeworkViewProgramsItem = {

@@ -1,0 +1,18 @@
+{
+  "name": "Training Tracker",
+  "short_name": "Trainer",
+  "description": "Track client rehab sessions and send homework programs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9f8f6",
+  "theme_color": "#2d6a4f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

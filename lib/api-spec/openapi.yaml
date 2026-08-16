@@ -18,6 +18,7 @@ tags:
   - name: dashboard
   - name: storage
   - name: homework
+  - name: videoLibrary
 paths:
   /healthz:
     get:
@@ -456,6 +457,58 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/UploadUrlResponse" }
+
+  /video-library:
+    get:
+      operationId: listVideoLibrary
+      tags: [videoLibrary]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/VideoLibraryItem" }
+    post:
+      operationId: createVideoLibraryItem
+      tags: [videoLibrary]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewVideoLibraryItem" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VideoLibraryItem" }
+
+  /video-library/{videoId}:
+    patch:
+      operationId: updateVideoLibraryItem
+      tags: [videoLibrary]
+      parameters:
+        - { name: videoId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VideoLibraryItemUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VideoLibraryItem" }
+    delete:
+      operationId: deleteVideoLibraryItem
+      tags: [videoLibrary]
+      parameters:
+        - { name: videoId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
 
   /homework/programs:
     get:
@@ -926,6 +979,7 @@ components:
         reps: { type: integer, nullable: true }
         weight: { type: integer, nullable: true }
         unit: { type: string }
+        durationSeconds: { type: integer, nullable: true }
         frequencyType: { type: string, enum: [daily, specific_days, times_per_week] }
         daysOfWeek:
           type: array
@@ -945,6 +999,7 @@ components:
         reps: { type: integer, nullable: true }
         weight: { type: integer, nullable: true }
         unit: { type: string }
+        durationSeconds: { type: integer, nullable: true }
         frequencyType: { type: string, enum: [daily, specific_days, times_per_week] }
         daysOfWeek:
           type: array
@@ -962,6 +1017,7 @@ components:
         reps: { type: integer, nullable: true }
         weight: { type: integer, nullable: true }
         unit: { type: string }
+        durationSeconds: { type: integer, nullable: true }
         frequencyType: { type: string, enum: [daily, specific_days, times_per_week] }
         daysOfWeek:
           type: array
@@ -971,6 +1027,38 @@ components:
         videoUrl: { type: string, nullable: true }
         instructions: { type: string, nullable: true }
         position: { type: integer }
+
+    VideoLibraryItem:
+      type: object
+      required: [id, title, url, tags, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        url: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+    NewVideoLibraryItem:
+      type: object
+      required: [title, url]
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        url: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+    VideoLibraryItemUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        url: { type: string }
+        tags:
+          type: array
+          items: { type: string }
 
     HomeworkView:
       type: object

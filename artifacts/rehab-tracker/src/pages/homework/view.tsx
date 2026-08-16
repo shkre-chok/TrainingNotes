@@ -19,11 +19,16 @@ function formatFrequency(ex: {
   return ex.frequencyType;
 }
 
-function formatVolume(ex: { sets?: number | null; reps?: number | null; weight?: number | null; unit?: string }) {
+function formatVolume(ex: { sets?: number | null; reps?: number | null; weight?: number | null; unit?: string; durationSeconds?: number | null }) {
   const parts: string[] = [];
   if (ex.sets) parts.push(`${ex.sets} sets`);
   if (ex.reps) parts.push(`${ex.reps} reps`);
   if (ex.weight) parts.push(`${ex.weight} ${ex.unit ?? "kg"}`);
+  if (ex.durationSeconds != null) {
+    const m = Math.floor(ex.durationSeconds / 60);
+    const s = ex.durationSeconds % 60;
+    parts.push(m > 0 ? (s > 0 ? `${m}m ${s}s` : `${m}min`) : `${s}s`);
+  }
   return parts.join(" · ");
 }
 
