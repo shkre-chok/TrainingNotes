@@ -7,6 +7,8 @@ import notesRouter from "./notes";
 import exercisesRouter from "./exercises";
 import correctionsRouter from "./corrections";
 import dashboardRouter from "./dashboard";
+import homeworkRouter from "./homework";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use(notesRouter);
 router.use(exercisesRouter);
 router.use(correctionsRouter);
 router.use(dashboardRouter);
+router.use(homeworkRouter);
+router.use(storageRouter);
 
 export default router;

@@ -353,6 +353,132 @@ export interface ActivityItem {
   timestamp: string;
 }
 
+export interface UploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export type UploadUrlResponseMetadata = {
+  name?: string;
+  size?: number;
+  contentType?: string;
+} | null;
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: UploadUrlResponseMetadata;
+}
+
+export interface HomeworkProgram {
+  id: string;
+  clientId: string;
+  title: string;
+  notes?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface NewHomeworkProgram {
+  clientId: string;
+  title: string;
+  notes?: string | null;
+}
+
+export interface HomeworkProgramUpdate {
+  title?: string;
+  notes?: string | null;
+  isActive?: boolean;
+}
+
+export type HomeworkExerciseFrequencyType =
+  (typeof HomeworkExerciseFrequencyType)[keyof typeof HomeworkExerciseFrequencyType];
+
+export const HomeworkExerciseFrequencyType = {
+  daily: "daily",
+  specific_days: "specific_days",
+  times_per_week: "times_per_week",
+} as const;
+
+export interface HomeworkExercise {
+  id: string;
+  programId: string;
+  name: string;
+  sets?: number | null;
+  reps?: number | null;
+  weight?: number | null;
+  unit?: string;
+  frequencyType: HomeworkExerciseFrequencyType;
+  daysOfWeek: number[];
+  timesPerWeek?: number | null;
+  timesPerDay: number;
+  videoUrl?: string | null;
+  instructions?: string | null;
+  position: number;
+  createdAt: string;
+}
+
+export type NewHomeworkExerciseFrequencyType =
+  (typeof NewHomeworkExerciseFrequencyType)[keyof typeof NewHomeworkExerciseFrequencyType];
+
+export const NewHomeworkExerciseFrequencyType = {
+  daily: "daily",
+  specific_days: "specific_days",
+  times_per_week: "times_per_week",
+} as const;
+
+export interface NewHomeworkExercise {
+  name: string;
+  sets?: number | null;
+  reps?: number | null;
+  weight?: number | null;
+  unit?: string;
+  frequencyType: NewHomeworkExerciseFrequencyType;
+  daysOfWeek?: number[];
+  timesPerWeek?: number | null;
+  timesPerDay?: number;
+  videoUrl?: string | null;
+  instructions?: string | null;
+  position?: number;
+}
+
+export type HomeworkExerciseUpdateFrequencyType =
+  (typeof HomeworkExerciseUpdateFrequencyType)[keyof typeof HomeworkExerciseUpdateFrequencyType];
+
+export const HomeworkExerciseUpdateFrequencyType = {
+  daily: "daily",
+  specific_days: "specific_days",
+  times_per_week: "times_per_week",
+} as const;
+
+export interface HomeworkExerciseUpdate {
+  name?: string;
+  sets?: number | null;
+  reps?: number | null;
+  weight?: number | null;
+  unit?: string;
+  frequencyType?: HomeworkExerciseUpdateFrequencyType;
+  daysOfWeek?: number[];
+  timesPerWeek?: number | null;
+  timesPerDay?: number;
+  videoUrl?: string | null;
+  instructions?: string | null;
+  position?: number;
+}
+
+export type HomeworkViewProgramsItem = {
+  id: string;
+  title: string;
+  notes?: string | null;
+  exercises: HomeworkExercise[];
+};
+
+export interface HomeworkView {
+  clientName: string;
+  programs: HomeworkViewProgramsItem[];
+}
+
 export type ListGoalsParams = {
   clientId?: string;
   status?: ListGoalsStatus;
@@ -370,4 +496,13 @@ export const ListGoalsStatus = {
 
 export type ListSessionsParams = {
   clientId?: string;
+};
+
+export type ListHomeworkProgramsParams = {
+  clientId: string;
+};
+
+export type SendHomeworkReminder200 = {
+  ok: boolean;
+  magicLink: string;
 };

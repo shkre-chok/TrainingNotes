@@ -71,6 +71,39 @@ export const correctionsTable = pgTable("corrections", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const homeworkProgramsTable = pgTable("homework_programs", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: text("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const homeworkExercisesTable = pgTable("homework_exercises", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: text("program_id").notNull().references(() => homeworkProgramsTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  sets: integer("sets"),
+  reps: integer("reps"),
+  weight: integer("weight"),
+  unit: text("unit").notNull().default("kg"),
+  frequencyType: text("frequency_type").notNull().default("daily"), // daily | specific_days | times_per_week
+  daysOfWeek: jsonb("days_of_week").$type<number[]>().notNull().default(sql`'[]'::jsonb`),
+  timesPerDay: integer("times_per_day").notNull().default(1),
+  videoUrl: text("video_url"),
+  instructions: text("instructions"),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const magicLinkTokensTable = pgTable("magic_link_tokens", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: text("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Client = typeof clientsTable.$inferSelect;
 export type Goal = typeof goalsTable.$inferSelect;
 export type Session = typeof sessionsTable.$inferSelect;

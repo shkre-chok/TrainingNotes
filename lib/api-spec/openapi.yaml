@@ -16,6 +16,8 @@ tags:
   - name: exercises
   - name: corrections
   - name: dashboard
+  - name: storage
+  - name: homework
 paths:
   /healthz:
     get:
@@ -438,6 +440,177 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Session" }
 
+  /storage/uploads/request-url:
+    post:
+      tags: [storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for direct file upload to GCS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadUrlRequest" }
+      responses:
+        "200":
+          description: Presigned URL generated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadUrlResponse" }
+
+  /homework/programs:
+    get:
+      tags: [homework]
+      operationId: listHomeworkPrograms
+      parameters:
+        - { name: clientId, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: List of programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HomeworkProgram" }
+    post:
+      tags: [homework]
+      operationId: createHomeworkProgram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewHomeworkProgram" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkProgram" }
+
+  /homework/programs/{programId}:
+    get:
+      tags: [homework]
+      operationId: getHomeworkProgram
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkProgram" }
+    patch:
+      tags: [homework]
+      operationId: updateHomeworkProgram
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HomeworkProgramUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkProgram" }
+    delete:
+      tags: [homework]
+      operationId: deleteHomeworkProgram
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /homework/programs/{programId}/exercises:
+    get:
+      tags: [homework]
+      operationId: listHomeworkExercises
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: List of exercises
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HomeworkExercise" }
+    post:
+      tags: [homework]
+      operationId: createHomeworkExercise
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewHomeworkExercise" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkExercise" }
+
+  /homework/exercises/{exerciseId}:
+    patch:
+      tags: [homework]
+      operationId: updateHomeworkExercise
+      parameters:
+        - { name: exerciseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HomeworkExerciseUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkExercise" }
+    delete:
+      tags: [homework]
+      operationId: deleteHomeworkExercise
+      parameters:
+        - { name: exerciseId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+
+  /homework/programs/{programId}/send-reminder:
+    post:
+      tags: [homework]
+      operationId: sendHomeworkReminder
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Reminder sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, magicLink]
+                properties:
+                  ok: { type: boolean }
+                  magicLink: { type: string }
+
+  /homework/view/{token}:
+    get:
+      tags: [homework]
+      operationId: getHomeworkView
+      summary: Public magic-link view for client homework
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Client homework view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkView" }
+        "404": { description: Token not found or expired }
+
 components:
   schemas:
     HealthStatus:
@@ -696,3 +869,123 @@ components:
         subtitle: { type: string, nullable: true }
         clientName: { type: string, nullable: true }
         timestamp: { type: string, format: date-time }
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string }
+        size: { type: integer }
+        contentType: { type: string }
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string }
+        objectPath: { type: string }
+        metadata:
+          type: object
+          nullable: true
+          properties:
+            name: { type: string }
+            size: { type: integer }
+            contentType: { type: string }
+
+    HomeworkProgram:
+      type: object
+      required: [id, clientId, title, isActive, createdAt]
+      properties:
+        id: { type: string }
+        clientId: { type: string }
+        title: { type: string }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    NewHomeworkProgram:
+      type: object
+      required: [clientId, title]
+      properties:
+        clientId: { type: string }
+        title: { type: string }
+        notes: { type: string, nullable: true }
+    HomeworkProgramUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+
+    HomeworkExercise:
+      type: object
+      required: [id, programId, name, frequencyType, daysOfWeek, timesPerDay, position, createdAt]
+      properties:
+        id: { type: string }
+        programId: { type: string }
+        name: { type: string }
+        sets: { type: integer, nullable: true }
+        reps: { type: integer, nullable: true }
+        weight: { type: integer, nullable: true }
+        unit: { type: string }
+        frequencyType: { type: string, enum: [daily, specific_days, times_per_week] }
+        daysOfWeek:
+          type: array
+          items: { type: integer }
+        timesPerWeek: { type: integer, nullable: true }
+        timesPerDay: { type: integer }
+        videoUrl: { type: string, nullable: true }
+        instructions: { type: string, nullable: true }
+        position: { type: integer }
+        createdAt: { type: string, format: date-time }
+    NewHomeworkExercise:
+      type: object
+      required: [name, frequencyType]
+      properties:
+        name: { type: string }
+        sets: { type: integer, nullable: true }
+        reps: { type: integer, nullable: true }
+        weight: { type: integer, nullable: true }
+        unit: { type: string }
+        frequencyType: { type: string, enum: [daily, specific_days, times_per_week] }
+        daysOfWeek:
+          type: array
+          items: { type: integer }
+        timesPerWeek: { type: integer, nullable: true }
+        timesPerDay: { type: integer }
+        videoUrl: { type: string, nullable: true }
+        instructions: { type: string, nullable: true }
+        position: { type: integer }
+    HomeworkExerciseUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        sets: { type: integer, nullable: true }
+        reps: { type: integer, nullable: true }
+        weight: { type: integer, nullable: true }
+        unit: { type: string }
+        frequencyType: { type: string, enum: [daily, specific_days, times_per_week] }
+        daysOfWeek:
+          type: array
+          items: { type: integer }
+        timesPerWeek: { type: integer, nullable: true }
+        timesPerDay: { type: integer }
+        videoUrl: { type: string, nullable: true }
+        instructions: { type: string, nullable: true }
+        position: { type: integer }
+
+    HomeworkView:
+      type: object
+      required: [clientName, programs]
+      properties:
+        clientName: { type: string }
+        programs:
+          type: array
+          items:
+            type: object
+            required: [id, title, exercises]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              notes: { type: string, nullable: true }
+              exercises:
+                type: array
+                items: { $ref: "#/components/schemas/HomeworkExercise" }

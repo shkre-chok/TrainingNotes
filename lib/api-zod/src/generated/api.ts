@@ -637,3 +637,215 @@ export const GetUpcomingSessionsResponseItem = zod.object({
 export const GetUpcomingSessionsResponse = zod.array(
   GetUpcomingSessionsResponseItem,
 );
+
+/**
+ * @summary Request a presigned URL for direct file upload to GCS
+ */
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string(),
+  size: zod.number(),
+  contentType: zod.string(),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string(),
+  objectPath: zod.string(),
+  metadata: zod
+    .object({
+      name: zod.string().optional(),
+      size: zod.number().optional(),
+      contentType: zod.string().optional(),
+    })
+    .nullish(),
+});
+
+export const ListHomeworkProgramsQueryParams = zod.object({
+  clientId: zod.coerce.string(),
+});
+
+export const ListHomeworkProgramsResponseItem = zod.object({
+  id: zod.string(),
+  clientId: zod.string(),
+  title: zod.string(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListHomeworkProgramsResponse = zod.array(
+  ListHomeworkProgramsResponseItem,
+);
+
+export const CreateHomeworkProgramBody = zod.object({
+  clientId: zod.string(),
+  title: zod.string(),
+  notes: zod.string().nullish(),
+});
+
+export const GetHomeworkProgramParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const GetHomeworkProgramResponse = zod.object({
+  id: zod.string(),
+  clientId: zod.string(),
+  title: zod.string(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+export const UpdateHomeworkProgramParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const UpdateHomeworkProgramBody = zod.object({
+  title: zod.string().optional(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateHomeworkProgramResponse = zod.object({
+  id: zod.string(),
+  clientId: zod.string(),
+  title: zod.string(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+export const DeleteHomeworkProgramParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const ListHomeworkExercisesParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const ListHomeworkExercisesResponseItem = zod.object({
+  id: zod.string(),
+  programId: zod.string(),
+  name: zod.string(),
+  sets: zod.number().nullish(),
+  reps: zod.number().nullish(),
+  weight: zod.number().nullish(),
+  unit: zod.string().optional(),
+  frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
+  daysOfWeek: zod.array(zod.number()),
+  timesPerWeek: zod.number().nullish(),
+  timesPerDay: zod.number(),
+  videoUrl: zod.string().nullish(),
+  instructions: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListHomeworkExercisesResponse = zod.array(
+  ListHomeworkExercisesResponseItem,
+);
+
+export const CreateHomeworkExerciseParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const CreateHomeworkExerciseBody = zod.object({
+  name: zod.string(),
+  sets: zod.number().nullish(),
+  reps: zod.number().nullish(),
+  weight: zod.number().nullish(),
+  unit: zod.string().optional(),
+  frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
+  daysOfWeek: zod.array(zod.number()).optional(),
+  timesPerWeek: zod.number().nullish(),
+  timesPerDay: zod.number().optional(),
+  videoUrl: zod.string().nullish(),
+  instructions: zod.string().nullish(),
+  position: zod.number().optional(),
+});
+
+export const UpdateHomeworkExerciseParams = zod.object({
+  exerciseId: zod.coerce.string(),
+});
+
+export const UpdateHomeworkExerciseBody = zod.object({
+  name: zod.string().optional(),
+  sets: zod.number().nullish(),
+  reps: zod.number().nullish(),
+  weight: zod.number().nullish(),
+  unit: zod.string().optional(),
+  frequencyType: zod
+    .enum(["daily", "specific_days", "times_per_week"])
+    .optional(),
+  daysOfWeek: zod.array(zod.number()).optional(),
+  timesPerWeek: zod.number().nullish(),
+  timesPerDay: zod.number().optional(),
+  videoUrl: zod.string().nullish(),
+  instructions: zod.string().nullish(),
+  position: zod.number().optional(),
+});
+
+export const UpdateHomeworkExerciseResponse = zod.object({
+  id: zod.string(),
+  programId: zod.string(),
+  name: zod.string(),
+  sets: zod.number().nullish(),
+  reps: zod.number().nullish(),
+  weight: zod.number().nullish(),
+  unit: zod.string().optional(),
+  frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
+  daysOfWeek: zod.array(zod.number()),
+  timesPerWeek: zod.number().nullish(),
+  timesPerDay: zod.number(),
+  videoUrl: zod.string().nullish(),
+  instructions: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+export const DeleteHomeworkExerciseParams = zod.object({
+  exerciseId: zod.coerce.string(),
+});
+
+export const SendHomeworkReminderParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const SendHomeworkReminderResponse = zod.object({
+  ok: zod.boolean(),
+  magicLink: zod.string(),
+});
+
+/**
+ * @summary Public magic-link view for client homework
+ */
+export const GetHomeworkViewParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const GetHomeworkViewResponse = zod.object({
+  clientName: zod.string(),
+  programs: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      notes: zod.string().nullish(),
+      exercises: zod.array(
+        zod.object({
+          id: zod.string(),
+          programId: zod.string(),
+          name: zod.string(),
+          sets: zod.number().nullish(),
+          reps: zod.number().nullish(),
+          weight: zod.number().nullish(),
+          unit: zod.string().optional(),
+          frequencyType: zod.enum(["daily", "specific_days", "times_per_week"]),
+          daysOfWeek: zod.array(zod.number()),
+          timesPerWeek: zod.number().nullish(),
+          timesPerDay: zod.number(),
+          videoUrl: zod.string().nullish(),
+          instructions: zod.string().nullish(),
+          position: zod.number(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  ),
+});

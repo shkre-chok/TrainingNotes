@@ -13,10 +13,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
   ArrowLeft, UserCircle, Calendar, Target, Activity, 
-  Plus, Edit3, Clock, TrendingUp, Phone, Mail
+  Plus, Edit3, Clock, TrendingUp, Phone, Mail, BookOpen
 } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { HomeworkTab } from "@/components/homework/HomeworkTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -197,9 +198,10 @@ export default function ClientDetail() {
         </div>
 
         <Tabs defaultValue="sessions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[500px]">
             <TabsTrigger value="sessions" className="font-medium">Sessions</TabsTrigger>
             <TabsTrigger value="goals" className="font-medium">Goals ({goals?.length || 0})</TabsTrigger>
+            <TabsTrigger value="homework" className="font-medium"><BookOpen size={14} className="mr-1.5" />Homework</TabsTrigger>
           </TabsList>
           
           <TabsContent value="sessions" className="mt-6 space-y-6">
@@ -411,6 +413,14 @@ export default function ClientDetail() {
                 )}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="homework" className="mt-6">
+            <HomeworkTab
+              clientId={clientId}
+              clientName={client.name}
+              clientEmail={client.email}
+            />
           </TabsContent>
         </Tabs>
       </div>
