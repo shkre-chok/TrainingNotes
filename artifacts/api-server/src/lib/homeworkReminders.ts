@@ -11,7 +11,7 @@ import { randomBytes } from "crypto";
 import { sendHomeworkReminderEmail } from "./email";
 import { logger } from "./logger";
 
-const REMINDER_SCHEDULE_PATTERN = /^weekly:([0-6]):([01]\d|2[0-3]):([0-5]\d)$/;
+const REMINDER_SCHEDULE_PATTERN = /^(?:weekly:([0-6]):([01]\d|2[0-3]):([0-5]\d)|hourly:([1-9]|1[0-9]|2[0-4]))$/;
 const REMINDER_CLAIM_TTL_IN_MS = 5 * 60 * 1000;
 const DAY_INDEX: Record<string, number> = {
   Sun: 0,
@@ -24,15 +24,24 @@ const DAY_INDEX: Record<string, number> = {
 };
 
 export type ReminderSchedule = {
-  dayOfWeek: number;
-  time: string;
+  kind: "weekly" | "hourly";
+  dayOfWeek?: number;
+  time?: string;
+  intervalHours?: number;
 };
 
 export function parseReminderSchedule(value: string | null | undefined): ReminderSchedule | null {
   if (!value) return null;
   const match = REMINDER_SCHEDULE_PATTERN.exec(value);
   if (!match) return null;
+  if (match[5]) {
+    return {
+      kind: "hourly",
+      intervalHours: Number(match[5]),
+    };
+  }
   return {
+    kind: "weekly",
     dayOfWeek: Number(match[1]),
     time: `${match[2]}:${match[3]}`,
   };
@@ -99,6 +108,9 @@ function zonedDateTimeToUtc(
 }
 
 function getThisWeekScheduledOccurrence(schedule: ReminderSchedule, now: Date, timeZone: string): Date {
+  if (schedule.kind !== "weekly" || schedule.dayOfWeek === undefined || !schedule.time) {
+    return now;
+  }
   const nowParts = getZonedDateParts(now, timeZone);
   const date = shiftCalendarDate(
     nowParts.year,
@@ -110,6 +122,10 @@ function getThisWeekScheduledOccurrence(schedule: ReminderSchedule, now: Date, t
 }
 
 function getMostRecentScheduledOccurrence(schedule: ReminderSchedule, now: Date, timeZone: string): Date {
+  if (schedule.kind === "hourly" && schedule.intervalHours) {
+    const intervalMs = schedule.intervalHours * 60 * 60 * 1000;
+    return new Date(Math.floor(now.getTime() / intervalMs) * intervalMs);
+  }
   const thisWeekOccurrence = getThisWeekScheduledOccurrence(schedule, now, timeZone);
   if (now >= thisWeekOccurrence) return thisWeekOccurrence;
   const parts = getZonedDateParts(thisWeekOccurrence, timeZone);
@@ -125,6 +141,10 @@ export function isReminderDue(
 ): boolean {
   const schedule = parseReminderSchedule(scheduleValue);
   if (!schedule) return false;
+  if (schedule.kind === "hourly" && schedule.intervalHours) {
+    if (!lastSentAt) return true;
+    return now.getTime() - lastSentAt.getTime() >= schedule.intervalHours * 60 * 60 * 1000;
+  }
   const thisWeekOccurrence = getThisWeekScheduledOccurrence(schedule, now, timeZone);
   if (!lastSentAt) {
     return now >= thisWeekOccurrence;

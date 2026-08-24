@@ -17,7 +17,10 @@ const router: IRouter = Router();
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
-const ReminderSchedule = z.string().regex(/^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$/);
+const ReminderSchedule = z.string().regex(
+  /^(?:weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d|hourly:([1-9]|1[0-9]|2[0-4]))$/,
+  "Use an hourly interval from 1 to 24 hours",
+);
 const ReminderTimezone = z.string().min(1).refine((value) => {
   try {
     new Intl.DateTimeFormat(undefined, { timeZone: value });

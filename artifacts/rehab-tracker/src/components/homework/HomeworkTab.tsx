@@ -45,8 +45,12 @@ import { useHomeworkChat, type HomeworkChatStatus } from "@/hooks/useHomeworkCha
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function parseReminderSchedule(value?: string | null) {
-  const match = value?.match(/^weekly:([0-6]):([01]\d|2[0-3]):([0-5]\d)$/);
-  return match ? { day: match[1], time: `${match[2]}:${match[3]}` } : null;
+  const hourly = value?.match(/^hourly:([1-9]|1[0-9]|2[0-4])$/);
+  if (hourly) return { kind: "hourly" as const, intervalHours: Number(hourly[1]) };
+  const weekly = value?.match(/^weekly:([0-6]):([01]\d|2[0-3]):([0-5]\d)$/);
+  return weekly
+    ? { kind: "weekly" as const, day: weekly[1], time: `${weekly[2]}:${weekly[3]}` }
+    : null;
 }
 
 function getBrowserTimezone() {
@@ -575,10 +579,10 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
   const [addOpen, setAddOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const savedSchedule = parseReminderSchedule(program.reminderSchedule);
-  const savedTimezone = program.reminderTimezone ?? getBrowserTimezone();
   const [reminderEnabled, setReminderEnabled] = useState(Boolean(program.reminderEnabled));
-  const [reminderDay, setReminderDay] = useState(savedSchedule?.day ?? "1");
-  const [reminderTime, setReminderTime] = useState(savedSchedule?.time ?? "08:00");
+  const [reminderIntervalHours, setReminderIntervalHours] = useState(
+    String(savedSchedule?.kind === "hourly" ? savedSchedule.intervalHours : 24),
+  );
 
   const { data: exercises, isLoading } = useListHomeworkExercises(program.id, {
     query: { queryKey: getListHomeworkExercisesQueryKey(program.id) },
@@ -607,8 +611,7 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
       },
       onError: (error: any) => {
         setReminderEnabled(Boolean(program.reminderEnabled));
-        setReminderDay(savedSchedule?.day ?? "1");
-        setReminderTime(savedSchedule?.time ?? "08:00");
+        setReminderIntervalHours(String(savedSchedule?.kind === "hourly" ? savedSchedule.intervalHours : 24));
         toast({
           title: "Schedule not saved",
           description: error?.message ?? "Please try again.",
@@ -621,20 +624,20 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
   useEffect(() => {
     const nextSchedule = parseReminderSchedule(program.reminderSchedule);
     setReminderEnabled(Boolean(program.reminderEnabled));
-    setReminderDay(nextSchedule?.day ?? "1");
-    setReminderTime(nextSchedule?.time ?? "08:00");
+    setReminderIntervalHours(String(nextSchedule?.kind === "hourly" ? nextSchedule.intervalHours : 24));
   }, [program.id, program.reminderSchedule, program.reminderEnabled]);
 
-  function saveReminderSchedule(enabled: boolean, day = reminderDay, time = reminderTime) {
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
-      toast({ title: "Choose a valid reminder time", variant: "destructive" });
+  function saveReminderSchedule(enabled: boolean, intervalHours = reminderIntervalHours) {
+    const hours = Number(intervalHours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 24) {
+      toast({ title: "Choose an interval from 1 to 24 hours", variant: "destructive" });
       return;
     }
     updateProgram.mutate({
       programId: program.id,
       data: {
-        reminderSchedule: `weekly:${day}:${time}`,
-        reminderTimezone: savedTimezone,
+        reminderSchedule: `hourly:${hours}`,
+        reminderTimezone: null,
         reminderEnabled: enabled,
       },
     });
@@ -695,7 +698,11 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
             <div>
               <p className="text-sm font-medium text-foreground">Automatic reminders</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {reminderEnabled ? "This program will be emailed automatically every week." : "Send reminders automatically on a weekly schedule."}
+                {reminderEnabled
+                  ? savedSchedule?.kind === "weekly"
+                    ? "This program still has a legacy weekly schedule. Choose an hourly interval to switch it."
+                    : `This program will be sent automatically every ${reminderIntervalHours} hour${reminderIntervalHours === "1" ? "" : "s"}.`
+                  : "Send reminders automatically every 1–24 hours."}
               </p>
             </div>
           </div>
@@ -710,43 +717,35 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
           />
         </div>
 
-        <div className={`mt-4 grid grid-cols-[1fr_110px] gap-3 ${!reminderEnabled ? "opacity-60" : ""}`}>
+        <div className={`mt-4 ${!reminderEnabled ? "opacity-60" : ""}`}>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Every</label>
             <Select
-              value={reminderDay}
+              value={reminderIntervalHours}
               disabled={!reminderEnabled || updateProgram.isPending}
-              onValueChange={(day) => {
-                setReminderDay(day);
-                saveReminderSchedule(reminderEnabled, day, reminderTime);
+              onValueChange={(hours) => {
+                setReminderIntervalHours(hours);
+                saveReminderSchedule(reminderEnabled, hours);
               }}
             >
               <SelectTrigger className="h-9 bg-background text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {DAY_NAMES.map((day, index) => (
-                  <SelectItem key={day} value={String(index)}>{day}</SelectItem>
+                {[1, 2, 4, 6, 8, 12, 24].map((hours) => (
+                  <SelectItem key={hours} value={String(hours)}>
+                    {hours === 1 ? "Every hour" : `Every ${hours} hours`}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor={`reminder-time-${program.id}`} className="text-xs font-medium text-muted-foreground">At</label>
-            <Input
-              id={`reminder-time-${program.id}`}
-              type="time"
-              value={reminderTime}
-              disabled={!reminderEnabled || updateProgram.isPending}
-              onChange={(event) => setReminderTime(event.target.value)}
-              onBlur={(event) => saveReminderSchedule(reminderEnabled, reminderDay, event.currentTarget.value)}
-              className="h-9 bg-background text-sm"
-            />
-          </div>
         </div>
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Times are sent in {savedTimezone}.
-        </p>
+        {savedSchedule?.kind === "weekly" && (
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            The old weekly schedule will be replaced when you choose an hourly interval.
+          </p>
+        )}
         {program.lastSentAt && (
           <p className="mt-1 text-[11px] text-muted-foreground">
             Last sent {formatLastSentAt(program.lastSentAt)}
