@@ -38,6 +38,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useHomeworkChat, type HomeworkChatStatus } from "@/hooks/useHomeworkChat";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -437,6 +438,12 @@ function formatMessageTime(timestamp: string) {
   }).format(new Date(timestamp));
 }
 
+function chatStatusLabel(status: HomeworkChatStatus) {
+  if (status === "connected") return "Live";
+  if (status === "offline") return "Offline · REST fallback";
+  return status === "connecting" ? "Connecting…" : "Reconnecting…";
+}
+
 function PractitionerMessageThread({ programId, clientName }: { programId: string; clientName: string }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -459,6 +466,31 @@ function PractitionerMessageThread({ programId, clientName }: { programId: strin
       },
     },
   });
+  const { status: chatStatus } = useHomeworkChat({
+    programId,
+    role: "practitioner",
+    onMessage: (message) => {
+      if (message.senderRole !== "client") return;
+      queryClient.setQueryData<HomeworkMessage[]>(
+        getListHomeworkMessagesQueryKey(programId),
+        (current) => {
+          if (!current || current.some((item) => item.id === message.id)) return current;
+          return [...current, message].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        },
+      );
+    },
+    onSnapshot: (snapshot) => {
+      queryClient.setQueryData<HomeworkMessage[]>(
+        getListHomeworkMessagesQueryKey(programId),
+        (current) => {
+          const merged = [...(current ?? []), ...snapshot];
+          return merged.filter((message, index, all) =>
+            all.findIndex((candidate) => candidate.id === message.id) === index,
+          ).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        },
+      );
+    },
+  });
 
   function submitReply() {
     const content = draft.trim();
@@ -472,7 +504,10 @@ function PractitionerMessageThread({ programId, clientName }: { programId: strin
         <MessageCircle size={16} className="text-primary" />
         <div>
           <h4 className="text-sm font-medium text-foreground">Messages with {clientName}</h4>
-          <p className="text-xs text-muted-foreground">Replies appear on their next link visit.</p>
+          <p className="text-xs text-muted-foreground">
+            <span className={chatStatus === "connected" ? "text-emerald-600" : undefined}>●</span>{" "}
+            {chatStatusLabel(chatStatus)}
+          </p>
         </div>
       </div>
 

@@ -4,11 +4,13 @@ import {
   useCreateHomeworkClientMessage,
   useGetHomeworkView,
   type HomeworkMessage,
+  type HomeworkView,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Play, ChevronDown, ChevronUp, Dumbbell, MessageCircle, Mic, Send, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useUpload } from "@workspace/object-storage-web";
+import { useHomeworkChat, type HomeworkChatStatus } from "@/hooks/useHomeworkChat";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -105,6 +107,12 @@ function formatMessageTime(timestamp: string) {
   }).format(new Date(timestamp));
 }
 
+function chatStatusLabel(status: HomeworkChatStatus) {
+  if (status === "connected") return "Live";
+  if (status === "offline") return "Offline · REST fallback";
+  return status === "connecting" ? "Connecting…" : "Reconnecting…";
+}
+
 function ClientMessageThread({
   programId,
   token,
@@ -129,6 +137,53 @@ function ClientMessageThread({
         queryClient.invalidateQueries({ queryKey: getGetHomeworkViewQueryKey(token) });
       },
       onError: () => setVoiceError("Your message could not be sent. Please try again."),
+    },
+  });
+  const { status: chatStatus } = useHomeworkChat({
+    programId,
+    role: "client",
+    token,
+    onMessage: (message) => {
+      if (message.senderRole !== "practitioner") return;
+      queryClient.setQueryData<HomeworkView>(
+        getGetHomeworkViewQueryKey(token),
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            programs: current.programs.map((program) => {
+              if (program.id !== programId) return program;
+              const messages = program.messages ?? [];
+              if (messages.some((item) => item.id === message.id)) return program;
+              return {
+                ...program,
+                messages: [...messages, message].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+              };
+            }),
+          };
+        },
+      );
+    },
+    onSnapshot: (snapshot) => {
+      queryClient.setQueryData<HomeworkView>(
+        getGetHomeworkViewQueryKey(token),
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            programs: current.programs.map((program) => {
+              if (program.id !== programId) return program;
+              const merged = [...(program.messages ?? []), ...snapshot];
+              return {
+                ...program,
+                messages: merged.filter((message, index, all) =>
+                  all.findIndex((candidate) => candidate.id === message.id) === index,
+                ).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+              };
+            }),
+          };
+        },
+      );
     },
   });
 
@@ -197,7 +252,10 @@ function ClientMessageThread({
         <MessageCircle size={17} className="text-green-700" />
         <div>
           <h3 className="font-semibold text-gray-900 text-sm">Message your practitioner</h3>
-          <p className="text-xs text-gray-500">Ask a question or share how you’re feeling.</p>
+          <p className="text-xs text-gray-500">
+            <span className={chatStatus === "connected" ? "text-green-600" : undefined}>●</span>{" "}
+            {chatStatusLabel(chatStatus)} · Ask a question or share how you’re feeling.
+          </p>
         </div>
       </div>
 

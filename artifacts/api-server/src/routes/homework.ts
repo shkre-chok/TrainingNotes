@@ -11,6 +11,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { sendProgramHomeworkReminder } from "../lib/homeworkReminders";
+import { publishHomeworkMessage, serializeHomeworkMessage } from "../lib/homeworkChat";
 
 const router: IRouter = Router();
 
@@ -115,18 +116,6 @@ function serializeExercise(e: typeof homeworkExercisesTable.$inferSelect) {
   };
 }
 
-function serializeMessage(m: typeof homeworkMessagesTable.$inferSelect) {
-  return {
-    id: m.id,
-    programId: m.programId,
-    clientId: m.clientId,
-    senderRole: m.senderRole,
-    content: m.content,
-    audioUrl: m.audioUrl,
-    createdAt: m.createdAt.toISOString(),
-  };
-}
-
 async function getProgram(programId: string) {
   const [program] = await db.select().from(homeworkProgramsTable)
     .where(eq(homeworkProgramsTable.id, programId));
@@ -148,6 +137,7 @@ async function createMessage(
     content: body.content?.trim() || null,
     audioUrl: body.audioUrl || null,
   }).returning();
+  publishHomeworkMessage(message);
   return message;
 }
 
@@ -284,7 +274,7 @@ router.get("/homework/programs/:programId/messages", async (req: Request, res: R
   const rows = await db.select().from(homeworkMessagesTable)
     .where(eq(homeworkMessagesTable.programId, programId))
     .orderBy(homeworkMessagesTable.createdAt);
-  res.json(rows.map(serializeMessage));
+  res.json(rows.map(serializeHomeworkMessage));
 });
 
 router.post("/homework/programs/:programId/messages", async (req: Request, res: Response) => {
@@ -294,7 +284,7 @@ router.post("/homework/programs/:programId/messages", async (req: Request, res: 
 
   const row = await createMessage(programId, "practitioner", parsed.data);
   if (!row) { res.status(404).json({ error: "Program not found" }); return; }
-  res.status(201).json(serializeMessage(row));
+  res.status(201).json(serializeHomeworkMessage(row));
 });
 
 // ── Send reminder ─────────────────────────────────────────────────────────────
@@ -352,7 +342,7 @@ router.get("/homework/view/:token", async (req: Request, res: Response) => {
         exercises: exercises.map(serializeExercise),
         messages: (await db.select().from(homeworkMessagesTable)
           .where(eq(homeworkMessagesTable.programId, p.id))
-          .orderBy(homeworkMessagesTable.createdAt)).map(serializeMessage),
+          .orderBy(homeworkMessagesTable.createdAt)).map(serializeHomeworkMessage),
       };
     })
   );
@@ -381,7 +371,7 @@ router.post("/homework/view/:token/programs/:programId/messages", async (req: Re
 
   const row = await createMessage(programId, "client", parsed.data);
   if (!row) { res.status(404).json({ error: "Program not found" }); return; }
-  res.status(201).json(serializeMessage(row));
+  res.status(201).json(serializeHomeworkMessage(row));
 });
 
 router.post("/homework/view/:token/push-token", async (req: Request, res: Response) => {

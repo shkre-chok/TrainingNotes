@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^8.0.0",
+    "@types/ws": "^8.18.1",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "cookie-parser": "^1.4.7",
@@ -21,6 +22,7 @@
     "pino": "^9",
     "pino-http": "^10",
     "resend": "^6.20.0",
+    "ws": "^8.21.3",
     "zod": "catalog:"
   },
   "devDependencies": {
