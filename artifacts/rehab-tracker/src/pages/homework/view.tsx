@@ -7,7 +7,7 @@ import {
   type HomeworkView,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Play, ChevronDown, ChevronUp, Dumbbell, MessageCircle, Mic, Send, Square, Volume2 } from "lucide-react";
+import { Calendar, Play, ChevronDown, ChevronUp, Dumbbell, MessageCircle, Mic, Send, Square, Volume2, Smartphone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useUpload } from "@workspace/object-storage-web";
 import { useHomeworkChat, type HomeworkChatStatus } from "@/hooks/useHomeworkChat";
@@ -328,6 +328,9 @@ function ClientMessageThread({
 export default function HomeworkView() {
   const params = useParams<{ token: string }>();
   const token = params.token ?? "";
+  const [appOpenAttempted, setAppOpenAttempted] = useState(false);
+  const shouldOfferApp = typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("openApp") === "1";
 
   const { data, isLoading, isError } = useGetHomeworkView(token, {
     query: { enabled: !!token, queryKey: getGetHomeworkViewQueryKey(token) },
@@ -358,6 +361,11 @@ export default function HomeworkView() {
     );
   }
 
+  function openCompanionApp() {
+    setAppOpenAttempted(true);
+    window.location.href = `homework-mobile://homework/${encodeURIComponent(token)}`;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -371,6 +379,23 @@ export default function HomeworkView() {
             <h1 className="font-semibold text-gray-900 leading-snug">{data.clientName}</h1>
           </div>
         </div>
+        {shouldOfferApp && (
+          <div className="max-w-lg mx-auto px-5 pb-4">
+            <button
+              type="button"
+              onClick={openCompanionApp}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+            >
+              <Smartphone size={16} />
+              Open in Homework Companion
+            </button>
+            {appOpenAttempted && (
+              <p className="mt-2 text-center text-xs text-gray-500">
+                If the app did not open, install Homework Companion first or continue using this web page.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content */}

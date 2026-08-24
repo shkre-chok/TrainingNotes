@@ -169,7 +169,7 @@ async function getOrCreateMagicLink(clientId: string) {
   const appUrl = process.env["APP_URL"] ?? `https://${process.env["REPLIT_DEV_DOMAIN"]}`;
   return {
     webLink: `${appUrl}/homework/${tokenRow.token}`,
-    appLink: `homework-mobile://homework/${tokenRow.token}`,
+    appLink: `${appUrl}/homework/${tokenRow.token}?openApp=1`,
   };
 }
 

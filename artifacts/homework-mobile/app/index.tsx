@@ -46,6 +46,25 @@ async function scheduleDeviceReminders(programs: HomeworkView["programs"], token
   const ids: string[] = [];
   for (const program of programs) {
     if (!program.reminderEnabled || !program.reminderSchedule) continue;
+    const hourlyMatch = /^hourly:([1-9]|1[0-9]|2[0-4])$/.exec(program.reminderSchedule);
+    if (hourlyMatch) {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Your homework is ready",
+          body: `${program.title} is ready to review.`,
+          sound: "default",
+          data: { url: `homework-mobile://homework/${token}` },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Number(hourlyMatch[1]) * 60 * 60,
+          repeats: true,
+          ...(Platform.OS === "android" ? { channelId: "homework-reminders" } : {}),
+        },
+      });
+      ids.push(id);
+      continue;
+    }
     const match = /^weekly:([0-6]):([01]\d|2[0-3]):([0-5]\d)$/.exec(program.reminderSchedule);
     if (!match) continue;
     const id = await Notifications.scheduleNotificationAsync({
