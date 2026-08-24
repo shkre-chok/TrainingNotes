@@ -4,3 +4,4 @@
 - [Video library route](video-library-route.md) — `/video-library` page at artifacts/rehab-tracker/src/pages/video-library/index.tsx; backend CRUD at /api/video-library
 - [Expo preview verification](expo-preview-verification.md) — the automated browser runner can hit transient 502s for Expo previews even when direct screenshots render correctly.
 - [Homework chat synchronization](homework-chat-websocket.md) — acknowledged subscriptions include an authoritative message snapshot; practitioner WS scope mirrors the current unauthenticated REST model.
+- [Workspace type declarations](workspace-type-declarations.md) — rebuild shared project-reference declarations before artifact typechecks after schema merges.
