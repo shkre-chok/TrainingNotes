@@ -22,7 +22,6 @@
     "google-auth-library": "^11.0.2",
     "pino": "^9",
     "pino-http": "^10",
-    "resend": "^6.20.0",
     "ws": "^8.21.3",
     "zod": "catalog:"
   },
