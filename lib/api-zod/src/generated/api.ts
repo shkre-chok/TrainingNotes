@@ -951,6 +951,9 @@ export const GetHomeworkViewParams = zod.object({
   token: zod.coerce.string(),
 });
 
+export const getHomeworkViewResponseProgramsItemReminderScheduleRegExp =
+  new RegExp("^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$");
+
 export const GetHomeworkViewResponse = zod.object({
   clientName: zod.string(),
   programs: zod.array(
@@ -958,6 +961,11 @@ export const GetHomeworkViewResponse = zod.object({
       id: zod.string(),
       title: zod.string(),
       notes: zod.string().nullish(),
+      reminderEnabled: zod.boolean().optional(),
+      reminderSchedule: zod
+        .string()
+        .regex(getHomeworkViewResponseProgramsItemReminderScheduleRegExp)
+        .nullish(),
       exercises: zod.array(
         zod.object({
           id: zod.string(),
@@ -1016,6 +1024,24 @@ export const CreateHomeworkClientMessageBody = zod.object({
     .string()
     .max(createHomeworkClientMessageBodyAudioUrlMax)
     .nullish(),
+});
+
+/**
+ * @summary Register a device for client homework reminders
+ */
+export const RegisterHomeworkPushTokenParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const registerHomeworkPushTokenBodyTokenMax = 512;
+
+export const RegisterHomeworkPushTokenBody = zod.object({
+  token: zod.string().min(1).max(registerHomeworkPushTokenBodyTokenMax),
+  platform: zod.enum(["ios", "android", "web", "unknown"]).optional(),
+});
+
+export const RegisterHomeworkPushTokenResponse = zod.object({
+  ok: zod.boolean(),
 });
 
 /**

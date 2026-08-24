@@ -556,6 +556,9 @@ export type HomeworkViewProgramsItem = {
   id: string;
   title: string;
   notes?: string | null;
+  reminderEnabled?: boolean;
+  /** @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$ */
+  reminderSchedule?: string | null;
   exercises: HomeworkExercise[];
   messages?: HomeworkMessage[];
 };
@@ -570,6 +573,29 @@ export interface HomeworkMessageInput {
   content?: string | null;
   /** @maxLength 2048 */
   audioUrl?: string | null;
+}
+
+export type HomeworkPushTokenInputPlatform =
+  (typeof HomeworkPushTokenInputPlatform)[keyof typeof HomeworkPushTokenInputPlatform];
+
+export const HomeworkPushTokenInputPlatform = {
+  ios: "ios",
+  android: "android",
+  web: "web",
+  unknown: "unknown",
+} as const;
+
+export interface HomeworkPushTokenInput {
+  /**
+   * @minLength 1
+   * @maxLength 512
+   */
+  token: string;
+  platform?: HomeworkPushTokenInputPlatform;
+}
+
+export interface HomeworkPushTokenRegistration {
+  ok: boolean;
 }
 
 export type ListGoalsParams = {

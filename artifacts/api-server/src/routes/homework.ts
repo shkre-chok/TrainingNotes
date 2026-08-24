@@ -5,6 +5,7 @@ import {
   homeworkExercisesTable,
   homeworkMessagesTable,
   magicLinkTokensTable,
+  homeworkPushTokensTable,
   clientsTable,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
@@ -71,6 +72,11 @@ const NewMessageBody = z.object({
   (body) => Boolean(body.audioUrl) || Boolean(body.content?.trim()),
   "A message must include text or a voice note",
 );
+
+const HomeworkPushTokenBody = z.object({
+  token: z.string().min(1).max(512),
+  platform: z.enum(["ios", "android", "web", "unknown"]).optional().default("unknown"),
+});
 
 // ── Serialize helpers ─────────────────────────────────────────────────────────
 
@@ -230,6 +236,7 @@ router.post("/homework/programs/:programId/exercises", async (req: Request, res:
     reps: body.reps ?? null,
     weight: body.weight ?? null,
     unit: body.unit ?? "kg",
+    durationSeconds: body.durationSeconds ?? null,
     frequencyType: body.frequencyType,
     daysOfWeek: body.daysOfWeek ?? [],
     timesPerDay: body.timesPerDay ?? 1,
@@ -249,6 +256,7 @@ router.patch("/homework/exercises/:exerciseId", async (req: Request, res: Respon
     ...(body.reps !== undefined && { reps: body.reps }),
     ...(body.weight !== undefined && { weight: body.weight }),
     ...(body.unit !== undefined && { unit: body.unit }),
+    ...(body.durationSeconds !== undefined && { durationSeconds: body.durationSeconds }),
     ...(body.frequencyType !== undefined && { frequencyType: body.frequencyType }),
     ...(body.daysOfWeek !== undefined && { daysOfWeek: body.daysOfWeek }),
     ...(body.timesPerDay !== undefined && { timesPerDay: body.timesPerDay }),
@@ -302,7 +310,7 @@ router.post("/homework/programs/:programId/send-reminder", async (req: Request, 
     res.json({ ok: true, magicLink: result.magicLink });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to send reminder";
-    if (message === "Client has no email address") {
+    if (message === "Client has no email address or app notifications enabled") {
       res.status(400).json({ error: message });
       return;
     }
@@ -339,6 +347,8 @@ router.get("/homework/view/:token", async (req: Request, res: Response) => {
         id: p.id,
         title: p.title,
         notes: p.notes,
+        reminderEnabled: p.reminderEnabled,
+        reminderSchedule: p.reminderSchedule,
         exercises: exercises.map(serializeExercise),
         messages: (await db.select().from(homeworkMessagesTable)
           .where(eq(homeworkMessagesTable.programId, p.id))
@@ -372,6 +382,31 @@ router.post("/homework/view/:token/programs/:programId/messages", async (req: Re
   const row = await createMessage(programId, "client", parsed.data);
   if (!row) { res.status(404).json({ error: "Program not found" }); return; }
   res.status(201).json(serializeMessage(row));
+});
+
+router.post("/homework/view/:token/push-token", async (req: Request, res: Response) => {
+  const token = String(req.params["token"]);
+  const parsed = HomeworkPushTokenBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [tokenRow] = await db.select().from(magicLinkTokensTable)
+    .where(eq(magicLinkTokensTable.token, token));
+  if (!tokenRow) { res.status(404).json({ error: "Not found" }); return; }
+
+  await db.insert(homeworkPushTokensTable).values({
+    clientId: tokenRow.clientId,
+    token: parsed.data.token,
+    platform: parsed.data.platform,
+  }).onConflictDoUpdate({
+    target: homeworkPushTokensTable.token,
+    set: {
+      clientId: tokenRow.clientId,
+      platform: parsed.data.platform,
+      updatedAt: new Date(),
+    },
+  });
+
+  res.json({ ok: true });
 });
 
 export default router;

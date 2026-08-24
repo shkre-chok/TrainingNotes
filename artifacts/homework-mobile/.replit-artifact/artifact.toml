@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/homework-mobile/"
+title = "Homework Companion"
+description = "A native mobile companion for clients to open homework programs from magic links, review exercises and videos offline, and receive reminder notifications."
+version = "1.0.0"
+id = "artifacts/homework-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/homework-mobile/" ]
+localPort = 25015
+
+[services.development]
+run = "pnpm --filter @workspace/homework-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/homework-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/homework-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "25015"
+BASE_PATH = "/homework-mobile/"

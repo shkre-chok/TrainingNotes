@@ -1,10 +1,11 @@
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, or } from "drizzle-orm";
 import {
   db,
   clientsTable,
   homeworkExercisesTable,
   homeworkProgramsTable,
   magicLinkTokensTable,
+  homeworkPushTokensTable,
 } from "@workspace/db";
 import { randomBytes } from "crypto";
 import { sendHomeworkReminderEmail } from "./email";
@@ -145,7 +146,61 @@ async function getOrCreateMagicLink(clientId: string) {
   }
 
   const appUrl = process.env["APP_URL"] ?? `https://${process.env["REPLIT_DEV_DOMAIN"]}`;
-  return `${appUrl}/homework/${tokenRow.token}`;
+  return {
+    webLink: `${appUrl}/homework/${tokenRow.token}`,
+    appLink: `homework-mobile://homework/${tokenRow.token}`,
+  };
+}
+
+async function sendHomeworkPushNotifications(
+  tokens: Array<typeof homeworkPushTokensTable.$inferSelect>,
+  clientName: string,
+  programTitle: string,
+  exerciseCount: number,
+  appLink: string,
+) {
+  if (tokens.length === 0) return;
+
+  const response = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(tokens.map((device) => ({
+      to: device.token,
+      title: "Your homework is ready",
+      body: `${clientName}, ${programTitle} has ${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} to review.`,
+      sound: "default",
+      data: { url: appLink },
+    }))),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Push provider rejected the reminder (${response.status})`);
+  }
+
+  const result = await response.json() as {
+    data?: Array<{ status?: string; details?: { error?: string } }>;
+  };
+  const tickets = result.data ?? [];
+  if (tickets.length !== tokens.length) {
+    throw new Error("Push provider returned an incomplete reminder response");
+  }
+  const errors = tickets
+    .map((ticket, index) => ({ ticket, deviceToken: tokens[index]?.token }))
+    .filter(({ ticket }) => ticket.status === "error");
+  const invalidTokens = errors
+    .filter(({ ticket }) => ticket.details?.error === "DeviceNotRegistered")
+    .map(({ deviceToken }) => deviceToken)
+    .filter((deviceToken): deviceToken is string => Boolean(deviceToken));
+  if (invalidTokens.length > 0) {
+    await db.delete(homeworkPushTokensTable)
+      .where(inArray(homeworkPushTokensTable.token, invalidTokens));
+  }
+  if (errors.length > 0) {
+    logger.warn({ errorCount: errors.length }, "Some homework push notifications were rejected");
+  }
+  if (errors.length === tickets.length) {
+    throw new Error("Push provider rejected every registered device");
+  }
 }
 
 export async function sendProgramHomeworkReminder(
@@ -170,34 +225,55 @@ export async function sendProgramHomeworkReminder(
   if (!client) {
     throw new Error("Client not found");
   }
-  if (!client.email) {
-    throw new Error("Client has no email address");
-  }
-
   const exercises = await db.select().from(homeworkExercisesTable)
     .where(eq(homeworkExercisesTable.programId, programId))
     .orderBy(homeworkExercisesTable.position);
-  const magicLink = await getOrCreateMagicLink(client.id);
+  const links = await getOrCreateMagicLink(client.id);
+  const pushTokens = await db.select().from(homeworkPushTokensTable)
+    .where(eq(homeworkPushTokensTable.clientId, client.id));
+  if (!client.email && pushTokens.length === 0) {
+    throw new Error("Client has no email address or app notifications enabled");
+  }
 
-  await sendHomeworkReminderEmail({
-    toEmail: client.email,
-    clientName: client.name,
-    magicLink,
-    programTitle: program.title,
-    exercises: exercises.map((exercise) => ({
-      name: exercise.name,
-      sets: exercise.sets,
-      reps: exercise.reps,
-      weight: exercise.weight,
-      unit: exercise.unit,
-      frequencyType: exercise.frequencyType,
-      daysOfWeek: (exercise.daysOfWeek as number[]) ?? [],
-      timesPerDay: exercise.timesPerDay,
-      instructions: exercise.instructions,
-      videoUrl: exercise.videoUrl,
-    })),
-    idempotencyKey: options.idempotencyKey,
-  });
+  const deliveryErrors: unknown[] = [];
+  if (client.email) {
+    try {
+      await sendHomeworkReminderEmail({
+        toEmail: client.email,
+        clientName: client.name,
+        magicLink: links.webLink,
+        appLink: links.appLink,
+        programTitle: program.title,
+        exercises: exercises.map((exercise) => ({
+          name: exercise.name,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          weight: exercise.weight,
+          unit: exercise.unit,
+          frequencyType: exercise.frequencyType,
+          daysOfWeek: (exercise.daysOfWeek as number[]) ?? [],
+          timesPerDay: exercise.timesPerDay,
+          instructions: exercise.instructions,
+          videoUrl: exercise.videoUrl,
+        })),
+        idempotencyKey: options.idempotencyKey,
+      });
+    } catch (error) {
+      deliveryErrors.push(error);
+      logger.error({ err: error, programId }, "Homework email reminder failed");
+    }
+  }
+  if (pushTokens.length > 0) {
+    try {
+      await sendHomeworkPushNotifications(pushTokens, client.name, program.title, exercises.length, links.appLink);
+    } catch (error) {
+      deliveryErrors.push(error);
+      logger.error({ err: error, programId }, "Homework push reminder failed");
+    }
+  }
+  if (deliveryErrors.length === (client.email ? 1 : 0) + (pushTokens.length > 0 ? 1 : 0)) {
+    throw deliveryErrors[0] instanceof Error ? deliveryErrors[0] : new Error("Unable to deliver homework reminder");
+  }
 
   await db.update(homeworkProgramsTable)
     .set({
@@ -206,7 +282,7 @@ export async function sendProgramHomeworkReminder(
     })
     .where(eq(homeworkProgramsTable.id, programId));
 
-  return { magicLink };
+  return { magicLink: links.webLink, appLink: links.appLink };
 }
 
 async function claimScheduledReminder(

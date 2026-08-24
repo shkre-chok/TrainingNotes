@@ -2,3 +2,4 @@
 - [OpenAPI mixed parameters](openapi-mixed-parameters.md) — Orval Zod barrels collide when one operation combines path and query parameters.
 - [HomeworkTab durationSeconds](homework-duration.md) — durationSeconds stored as integer seconds; UI splits into mins+secs inputs; compute before mutate
 - [Video library route](video-library-route.md) — `/video-library` page at artifacts/rehab-tracker/src/pages/video-library/index.tsx; backend CRUD at /api/video-library
+- [Expo preview verification](expo-preview-verification.md) — the automated browser runner can hit transient 502s for Expo previews even when direct screenshots render correctly.

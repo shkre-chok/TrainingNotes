@@ -43,11 +43,12 @@ export async function sendHomeworkReminderEmail(opts: {
   toEmail: string;
   clientName: string;
   magicLink: string;
+  appLink?: string;
   programTitle: string;
   exercises: HomeworkExerciseEmail[];
   idempotencyKey?: string;
 }) {
-  const { toEmail, clientName, magicLink, programTitle, exercises, idempotencyKey } = opts;
+  const { toEmail, clientName, magicLink, appLink, programTitle, exercises, idempotencyKey } = opts;
 
   const exerciseRows = exercises
     .map(
@@ -81,6 +82,7 @@ export async function sendHomeworkReminderEmail(opts: {
          style="display:inline-block;background:#2d7a4f;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;">
         View Full Program
       </a>
+      ${appLink ? `<p style="margin:14px 0 0;font-size:13px;"><a href="${appLink}" style="color:#2d7a4f;">Open in the Homework Companion app</a></p>` : ""}
     </div>
     <p style="margin-top:20px;font-size:12px;color:#aaa;text-align:center;">
       Sent by your practitioner via Training Tracker

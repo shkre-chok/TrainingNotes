@@ -684,6 +684,26 @@ paths:
               schema: { $ref: "#/components/schemas/HomeworkMessage" }
         "404": { description: Token or program not found }
 
+  /homework/view/{token}/push-token:
+    post:
+      tags: [homework]
+      operationId: registerHomeworkPushToken
+      summary: Register a device for client homework reminders
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HomeworkPushTokenInput" }
+      responses:
+        "200":
+          description: Push token registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkPushTokenRegistration" }
+        "404": { description: Token not found }
+
   /homework/programs/{programId}/messages:
     get:
       tags: [homework]
@@ -1139,6 +1159,8 @@ components:
               id: { type: string }
               title: { type: string }
               notes: { type: string, nullable: true }
+              reminderEnabled: { type: boolean }
+              reminderSchedule: { type: string, nullable: true, pattern: "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$" }
               exercises:
                 type: array
                 items: { $ref: "#/components/schemas/HomeworkExercise" }
@@ -1161,3 +1183,14 @@ components:
       properties:
         content: { type: string, nullable: true, maxLength: 5000 }
         audioUrl: { type: string, nullable: true, maxLength: 2048 }
+    HomeworkPushTokenInput:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 512 }
+        platform: { type: string, enum: [ios, android, web, unknown] }
+    HomeworkPushTokenRegistration:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }

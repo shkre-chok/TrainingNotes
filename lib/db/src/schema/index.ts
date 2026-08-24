@@ -129,6 +129,15 @@ export const magicLinkTokensTable = pgTable("magic_link_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const homeworkPushTokensTable = pgTable("homework_push_tokens", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: text("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  platform: text("platform").notNull().default("unknown"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Client = typeof clientsTable.$inferSelect;
 export type Goal = typeof goalsTable.$inferSelect;
 export type Session = typeof sessionsTable.$inferSelect;

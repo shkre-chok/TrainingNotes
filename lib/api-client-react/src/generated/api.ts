@@ -35,6 +35,8 @@ import type {
   HomeworkMessageInput,
   HomeworkProgram,
   HomeworkProgramUpdate,
+  HomeworkPushTokenInput,
+  HomeworkPushTokenRegistration,
   HomeworkView,
   ListGoalsParams,
   ListHomeworkProgramsParams,
@@ -3973,6 +3975,97 @@ export const useCreateHomeworkClientMessage = <
   TContext
 > => {
   return useMutation(getCreateHomeworkClientMessageMutationOptions(options));
+};
+
+/**
+ * @summary Register a device for client homework reminders
+ */
+export const getRegisterHomeworkPushTokenUrl = (token: string) => {
+  return `/api/homework/view/${token}/push-token`;
+};
+
+export const registerHomeworkPushToken = async (
+  token: string,
+  homeworkPushTokenInput: HomeworkPushTokenInput,
+  options?: RequestInit,
+): Promise<HomeworkPushTokenRegistration> => {
+  return customFetch<HomeworkPushTokenRegistration>(
+    getRegisterHomeworkPushTokenUrl(token),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(homeworkPushTokenInput),
+    },
+  );
+};
+
+export const getRegisterHomeworkPushTokenMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerHomeworkPushToken>>,
+    TError,
+    { token: string; data: BodyType<HomeworkPushTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerHomeworkPushToken>>,
+  TError,
+  { token: string; data: BodyType<HomeworkPushTokenInput> },
+  TContext
+> => {
+  const mutationKey = ["registerHomeworkPushToken"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerHomeworkPushToken>>,
+    { token: string; data: BodyType<HomeworkPushTokenInput> }
+  > = (props) => {
+    const { token, data } = props ?? {};
+
+    return registerHomeworkPushToken(token, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterHomeworkPushTokenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerHomeworkPushToken>>
+>;
+export type RegisterHomeworkPushTokenMutationBody =
+  BodyType<HomeworkPushTokenInput>;
+export type RegisterHomeworkPushTokenMutationError = ErrorType<void>;
+
+/**
+ * @summary Register a device for client homework reminders
+ */
+export const useRegisterHomeworkPushToken = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerHomeworkPushToken>>,
+    TError,
+    { token: string; data: BodyType<HomeworkPushTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerHomeworkPushToken>>,
+  TError,
+  { token: string; data: BodyType<HomeworkPushTokenInput> },
+  TContext
+> => {
+  return useMutation(getRegisterHomeworkPushTokenMutationOptions(options));
 };
 
 /**
