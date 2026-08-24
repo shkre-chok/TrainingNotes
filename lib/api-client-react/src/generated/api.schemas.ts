@@ -375,21 +375,62 @@ export interface HomeworkProgram {
   id: string;
   clientId: string;
   title: string;
+  /** @nullable */
   notes?: string | null;
   isActive: boolean;
+  /**
+   * Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.
+   * @nullable
+   * @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$
+   */
+  reminderSchedule?: string | null;
+  /**
+   * IANA timezone used to interpret the reminder schedule.
+   * @nullable
+   */
+  reminderTimezone?: string | null;
+  reminderEnabled: boolean;
+  /** @nullable */
+  lastSentAt: string | null;
   createdAt: string;
 }
 
 export interface NewHomeworkProgram {
   clientId: string;
   title: string;
+  /** @nullable */
   notes?: string | null;
+  /**
+   * Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.
+   * @nullable
+   * @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$
+   */
+  reminderSchedule?: string | null;
+  /**
+   * IANA timezone used to interpret the reminder schedule.
+   * @nullable
+   */
+  reminderTimezone?: string | null;
+  reminderEnabled?: boolean;
 }
 
 export interface HomeworkProgramUpdate {
   title?: string;
+  /** @nullable */
   notes?: string | null;
   isActive?: boolean;
+  /**
+   * Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.
+   * @nullable
+   * @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$
+   */
+  reminderSchedule?: string | null;
+  /**
+   * IANA timezone used to interpret the reminder schedule.
+   * @nullable
+   */
+  reminderTimezone?: string | null;
+  reminderEnabled?: boolean;
 }
 
 export type HomeworkExerciseFrequencyType =

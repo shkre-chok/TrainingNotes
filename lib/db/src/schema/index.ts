@@ -77,6 +77,11 @@ export const homeworkProgramsTable = pgTable("homework_programs", {
   title: text("title").notNull(),
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),
+  reminderSchedule: text("reminder_schedule"),
+  reminderTimezone: text("reminder_timezone"),
+  reminderEnabled: boolean("reminder_enabled").notNull().default(false),
+  lastSentAt: timestamp("last_sent_at", { withTimezone: true }),
+  reminderSendingAt: timestamp("reminder_sending_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

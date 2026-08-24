@@ -9,23 +9,41 @@ import {
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { randomBytes } from "crypto";
-import { sendHomeworkReminderEmail } from "../lib/email";
+import { sendProgramHomeworkReminder } from "../lib/homeworkReminders";
 
 const router: IRouter = Router();
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
+const ReminderSchedule = z.string().regex(/^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$/);
+const ReminderTimezone = z.string().min(1).refine((value) => {
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}, "Invalid reminder timezone");
+
 const NewProgramBody = z.object({
   clientId: z.string(),
   title: z.string().min(1),
   notes: z.string().optional().nullable(),
-});
+  reminderSchedule: ReminderSchedule.optional().nullable(),
+  reminderTimezone: ReminderTimezone.optional().nullable(),
+  reminderEnabled: z.boolean().optional().default(false),
+}).refine(
+  (body) => !body.reminderEnabled || Boolean(body.reminderSchedule && body.reminderTimezone),
+  "An enabled reminder requires a schedule and timezone",
+);
 
 const UpdateProgramBody = z.object({
   title: z.string().optional(),
   notes: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
+  reminderSchedule: ReminderSchedule.optional().nullable(),
+  reminderTimezone: ReminderTimezone.optional().nullable(),
+  reminderEnabled: z.boolean().optional(),
 });
 
 const NewExerciseBody = z.object({
@@ -63,6 +81,10 @@ function serializeProgram(p: typeof homeworkProgramsTable.$inferSelect) {
     title: p.title,
     notes: p.notes,
     isActive: p.isActive,
+    reminderSchedule: p.reminderSchedule,
+    reminderTimezone: p.reminderTimezone,
+    reminderEnabled: p.reminderEnabled,
+    lastSentAt: p.lastSentAt?.toISOString() ?? null,
     createdAt: p.createdAt.toISOString(),
   };
 }
@@ -140,6 +162,9 @@ router.post("/homework/programs", async (req: Request, res: Response) => {
     clientId: body.clientId,
     title: body.title,
     notes: body.notes ?? null,
+    reminderSchedule: body.reminderSchedule ?? null,
+    reminderTimezone: body.reminderTimezone ?? null,
+    reminderEnabled: body.reminderEnabled,
   }).returning();
   res.status(201).json(serializeProgram(row));
 });
@@ -154,10 +179,26 @@ router.get("/homework/programs/:programId", async (req: Request, res: Response) 
 router.patch("/homework/programs/:programId", async (req: Request, res: Response) => {
   const programId = String(req.params["programId"]);
   const body = UpdateProgramBody.parse(req.body);
+  const existing = await getProgram(programId);
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  const reminderEnabled = body.reminderEnabled ?? existing.reminderEnabled;
+  const reminderSchedule = body.reminderSchedule === undefined
+    ? existing.reminderSchedule
+    : body.reminderSchedule;
+  const reminderTimezone = body.reminderTimezone === undefined
+    ? existing.reminderTimezone
+    : body.reminderTimezone;
+  if (reminderEnabled && (!reminderSchedule || !reminderTimezone)) {
+    res.status(400).json({ error: "An enabled reminder requires a schedule and timezone" });
+    return;
+  }
   const [row] = await db.update(homeworkProgramsTable).set({
     ...(body.title !== undefined && { title: body.title }),
     ...(body.notes !== undefined && { notes: body.notes }),
     ...(body.isActive !== undefined && { isActive: body.isActive }),
+    ...(body.reminderSchedule !== undefined && { reminderSchedule: body.reminderSchedule }),
+    ...(body.reminderTimezone !== undefined && { reminderTimezone: body.reminderTimezone }),
+    ...(body.reminderEnabled !== undefined && { reminderEnabled: body.reminderEnabled }),
   }).where(eq(homeworkProgramsTable.id, programId)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.json(serializeProgram(row));
@@ -252,53 +293,26 @@ router.post("/homework/programs/:programId/messages", async (req: Request, res: 
 
 router.post("/homework/programs/:programId/send-reminder", async (req: Request, res: Response) => {
   const programId = String(req.params["programId"]);
-
-  const [program] = await db.select().from(homeworkProgramsTable).where(eq(homeworkProgramsTable.id, programId));
+  const [program] = await db.select().from(homeworkProgramsTable)
+    .where(eq(homeworkProgramsTable.id, programId));
   if (!program) { res.status(404).json({ error: "Program not found" }); return; }
 
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, program.clientId));
-  if (!client) { res.status(404).json({ error: "Client not found" }); return; }
-  if (!client.email) { res.status(400).json({ error: "Client has no email address" }); return; }
-
-  const exercises = await db.select().from(homeworkExercisesTable)
-    .where(eq(homeworkExercisesTable.programId, programId))
-    .orderBy(homeworkExercisesTable.position);
-
-  // Upsert magic link token (one per client, re-use if exists)
-  let [tokenRow] = await db.select().from(magicLinkTokensTable)
-    .where(eq(magicLinkTokensTable.clientId, client.id));
-
-  if (!tokenRow) {
-    const token = randomBytes(32).toString("hex");
-    [tokenRow] = await db.insert(magicLinkTokensTable).values({
-      clientId: client.id,
-      token,
-    }).returning();
+  try {
+    const result = await sendProgramHomeworkReminder(programId);
+    res.json({ ok: true, magicLink: result.magicLink });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to send reminder";
+    if (message === "Client has no email address") {
+      res.status(400).json({ error: message });
+      return;
+    }
+    if (message === "Program not found" || message === "Client not found") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    req.log.error({ err: error, programId }, "Homework reminder failed");
+    res.status(500).json({ error: "Unable to send reminder" });
   }
-
-  const appUrl = process.env["APP_URL"] ?? `https://${process.env["REPLIT_DEV_DOMAIN"]}`;
-  const magicLink = `${appUrl}/homework/${tokenRow.token}`;
-
-  await sendHomeworkReminderEmail({
-    toEmail: client.email,
-    clientName: client.name,
-    magicLink,
-    programTitle: program.title,
-    exercises: exercises.map((e) => ({
-      name: e.name,
-      sets: e.sets,
-      reps: e.reps,
-      weight: e.weight,
-      unit: e.unit,
-      frequencyType: e.frequencyType,
-      daysOfWeek: (e.daysOfWeek as number[]) ?? [],
-      timesPerDay: e.timesPerDay,
-      instructions: e.instructions,
-      videoUrl: e.videoUrl,
-    })),
-  });
-
-  res.json({ ok: true, magicLink });
 });
 
 // ── Public magic-link view ────────────────────────────────────────────────────

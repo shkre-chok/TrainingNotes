@@ -8,6 +8,19 @@
 
 export interface HomeworkProgramUpdate {
   title?: string;
+  /** @nullable */
   notes?: string | null;
   isActive?: boolean;
+  /**
+   * Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.
+   * @nullable
+   * @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$
+   */
+  reminderSchedule?: string | null;
+  /**
+   * IANA timezone used to interpret the reminder schedule.
+   * @nullable
+   */
+  reminderTimezone?: string | null;
+  reminderEnabled?: boolean;
 }

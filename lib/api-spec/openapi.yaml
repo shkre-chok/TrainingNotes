@@ -1001,13 +1001,17 @@ components:
 
     HomeworkProgram:
       type: object
-      required: [id, clientId, title, isActive, createdAt]
+      required: [id, clientId, title, isActive, reminderEnabled, lastSentAt, createdAt]
       properties:
         id: { type: string }
         clientId: { type: string }
         title: { type: string }
-        notes: { type: string, nullable: true }
+        notes: { type: ["string", "null"] }
         isActive: { type: boolean }
+        reminderSchedule: { type: ["string", "null"], pattern: "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$", description: "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday." }
+        reminderTimezone: { type: ["string", "null"], description: "IANA timezone used to interpret the reminder schedule." }
+        reminderEnabled: { type: boolean }
+        lastSentAt: { type: ["string", "null"], format: date-time }
         createdAt: { type: string, format: date-time }
     NewHomeworkProgram:
       type: object
@@ -1015,13 +1019,19 @@ components:
       properties:
         clientId: { type: string }
         title: { type: string }
-        notes: { type: string, nullable: true }
+        notes: { type: ["string", "null"] }
+        reminderSchedule: { type: ["string", "null"], pattern: "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$", description: "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday." }
+        reminderTimezone: { type: ["string", "null"], description: "IANA timezone used to interpret the reminder schedule." }
+        reminderEnabled: { type: boolean, default: false }
     HomeworkProgramUpdate:
       type: object
       properties:
         title: { type: string }
-        notes: { type: string, nullable: true }
+        notes: { type: ["string", "null"] }
         isActive: { type: boolean }
+        reminderSchedule: { type: ["string", "null"], pattern: "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$", description: "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday." }
+        reminderTimezone: { type: ["string", "null"], description: "IANA timezone used to interpret the reminder schedule." }
+        reminderEnabled: { type: boolean }
 
     HomeworkExercise:
       type: object

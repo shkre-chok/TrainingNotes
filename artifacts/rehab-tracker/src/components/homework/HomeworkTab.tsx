@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
@@ -38,6 +42,23 @@ import { useToast } from "@/hooks/use-toast";
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function parseReminderSchedule(value?: string | null) {
+  const match = value?.match(/^weekly:([0-6]):([01]\d|2[0-3]):([0-5]\d)$/);
+  return match ? { day: match[1], time: `${match[2]}:${match[3]}` } : null;
+}
+
+function getBrowserTimezone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
+
+function formatLastSentAt(value?: string | null) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 // ── Exercise form schema ──────────────────────────────────────────────────────
 
@@ -518,6 +539,11 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const savedSchedule = parseReminderSchedule(program.reminderSchedule);
+  const savedTimezone = program.reminderTimezone ?? getBrowserTimezone();
+  const [reminderEnabled, setReminderEnabled] = useState(Boolean(program.reminderEnabled));
+  const [reminderDay, setReminderDay] = useState(savedSchedule?.day ?? "1");
+  const [reminderTime, setReminderTime] = useState(savedSchedule?.time ?? "08:00");
 
   const { data: exercises, isLoading } = useListHomeworkExercises(program.id, {
     query: { queryKey: getListHomeworkExercisesQueryKey(program.id) },
@@ -538,6 +564,46 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
         queryClient.invalidateQueries({ queryKey: getListHomeworkProgramsQueryKey({ clientId: program.clientId }) }),
     },
   });
+
+  const updateProgram = useUpdateHomeworkProgram({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListHomeworkProgramsQueryKey({ clientId: program.clientId }) });
+      },
+      onError: (error: any) => {
+        setReminderEnabled(Boolean(program.reminderEnabled));
+        setReminderDay(savedSchedule?.day ?? "1");
+        setReminderTime(savedSchedule?.time ?? "08:00");
+        toast({
+          title: "Schedule not saved",
+          description: error?.message ?? "Please try again.",
+          variant: "destructive",
+        });
+      },
+    },
+  });
+
+  useEffect(() => {
+    const nextSchedule = parseReminderSchedule(program.reminderSchedule);
+    setReminderEnabled(Boolean(program.reminderEnabled));
+    setReminderDay(nextSchedule?.day ?? "1");
+    setReminderTime(nextSchedule?.time ?? "08:00");
+  }, [program.id, program.reminderSchedule, program.reminderEnabled]);
+
+  function saveReminderSchedule(enabled: boolean, day = reminderDay, time = reminderTime) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      toast({ title: "Choose a valid reminder time", variant: "destructive" });
+      return;
+    }
+    updateProgram.mutate({
+      programId: program.id,
+      data: {
+        reminderSchedule: `weekly:${day}:${time}`,
+        reminderTimezone: savedTimezone,
+        reminderEnabled: enabled,
+      },
+    });
+  }
 
   const sendReminder = useSendHomeworkReminder({
     mutation: {
@@ -585,6 +651,72 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
             <Trash2 size={13} />
           </Button>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <Calendar size={17} className="mt-0.5 text-primary" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Automatic reminders</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {reminderEnabled ? "This program will be emailed automatically every week." : "Send reminders automatically on a weekly schedule."}
+              </p>
+            </div>
+          </div>
+          <Switch
+            aria-label={`${reminderEnabled ? "Disable" : "Enable"} automatic reminders for ${program.title}`}
+            checked={reminderEnabled}
+            disabled={updateProgram.isPending}
+            onCheckedChange={(checked) => {
+              setReminderEnabled(checked);
+              saveReminderSchedule(checked);
+            }}
+          />
+        </div>
+
+        <div className={`mt-4 grid grid-cols-[1fr_110px] gap-3 ${!reminderEnabled ? "opacity-60" : ""}`}>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Every</label>
+            <Select
+              value={reminderDay}
+              disabled={!reminderEnabled || updateProgram.isPending}
+              onValueChange={(day) => {
+                setReminderDay(day);
+                saveReminderSchedule(reminderEnabled, day, reminderTime);
+              }}
+            >
+              <SelectTrigger className="h-9 bg-background text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DAY_NAMES.map((day, index) => (
+                  <SelectItem key={day} value={String(index)}>{day}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor={`reminder-time-${program.id}`} className="text-xs font-medium text-muted-foreground">At</label>
+            <Input
+              id={`reminder-time-${program.id}`}
+              type="time"
+              value={reminderTime}
+              disabled={!reminderEnabled || updateProgram.isPending}
+              onChange={(event) => setReminderTime(event.target.value)}
+              onBlur={(event) => saveReminderSchedule(reminderEnabled, reminderDay, event.currentTarget.value)}
+              className="h-9 bg-background text-sm"
+            />
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Times are sent in {savedTimezone}.
+        </p>
+        {program.lastSentAt && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Last sent {formatLastSentAt(program.lastSentAt)}
+          </p>
+        )}
       </div>
 
       {isLoading ? (

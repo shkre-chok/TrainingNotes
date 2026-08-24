@@ -45,8 +45,9 @@ export async function sendHomeworkReminderEmail(opts: {
   magicLink: string;
   programTitle: string;
   exercises: HomeworkExerciseEmail[];
+  idempotencyKey?: string;
 }) {
-  const { toEmail, clientName, magicLink, programTitle, exercises } = opts;
+  const { toEmail, clientName, magicLink, programTitle, exercises, idempotencyKey } = opts;
 
   const exerciseRows = exercises
     .map(
@@ -88,10 +89,17 @@ export async function sendHomeworkReminderEmail(opts: {
 </body>
 </html>`;
 
-  return resend.emails.send({
-    from: FROM,
-    to: toEmail,
-    subject: `Your homework: ${programTitle}`,
-    html,
-  });
+  const response = await resend.emails.send(
+    {
+      from: FROM,
+      to: toEmail,
+      subject: `Your homework: ${programTitle}`,
+      html,
+    },
+    idempotencyKey ? { idempotencyKey } : undefined,
+  );
+  if (response.error) {
+    throw new Error(response.error.message || "Email provider rejected the reminder");
+  }
+  return response;
 }
