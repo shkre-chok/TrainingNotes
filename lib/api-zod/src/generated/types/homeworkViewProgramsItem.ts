@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { HomeworkExercise } from "./homeworkExercise";
+import type { HomeworkMessage } from "./homeworkMessage";
 
 export type HomeworkViewProgramsItem = {
   id: string;
   title: string;
   notes?: string | null;
   exercises: HomeworkExercise[];
+  messages?: HomeworkMessage[];
 };

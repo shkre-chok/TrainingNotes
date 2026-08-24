@@ -493,16 +493,42 @@ export interface VideoLibraryItemUpdate {
   tags?: string[];
 }
 
+export type HomeworkMessageSenderRole =
+  (typeof HomeworkMessageSenderRole)[keyof typeof HomeworkMessageSenderRole];
+
+export const HomeworkMessageSenderRole = {
+  client: "client",
+  practitioner: "practitioner",
+} as const;
+
+export interface HomeworkMessage {
+  id: string;
+  programId: string;
+  clientId: string;
+  senderRole: HomeworkMessageSenderRole;
+  content?: string | null;
+  audioUrl?: string | null;
+  createdAt: string;
+}
+
 export type HomeworkViewProgramsItem = {
   id: string;
   title: string;
   notes?: string | null;
   exercises: HomeworkExercise[];
+  messages?: HomeworkMessage[];
 };
 
 export interface HomeworkView {
   clientName: string;
   programs: HomeworkViewProgramsItem[];
+}
+
+export interface HomeworkMessageInput {
+  /** @maxLength 5000 */
+  content?: string | null;
+  /** @maxLength 2048 */
+  audioUrl?: string | null;
 }
 
 export type ListGoalsParams = {

@@ -98,6 +98,16 @@ export const homeworkExercisesTable = pgTable("homework_exercises", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const homeworkMessagesTable = pgTable("homework_messages", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: text("program_id").notNull().references(() => homeworkProgramsTable.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => clientsTable.id, { onDelete: "cascade" }),
+  senderRole: text("sender_role").notNull(), // client | practitioner
+  content: text("content"),
+  audioUrl: text("audio_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const videoLibraryTable = pgTable("video_library", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),

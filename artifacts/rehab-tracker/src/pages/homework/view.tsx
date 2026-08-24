@@ -1,7 +1,14 @@
 import { useParams } from "wouter";
-import { useGetHomeworkView } from "@workspace/api-client-react";
-import { Calendar, Play, ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
-import { useState } from "react";
+import {
+  getGetHomeworkViewQueryKey,
+  useCreateHomeworkClientMessage,
+  useGetHomeworkView,
+  type HomeworkMessage,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Calendar, Play, ChevronDown, ChevronUp, Dumbbell, MessageCircle, Mic, Send, Square, Volume2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@workspace/object-storage-web";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -85,12 +92,187 @@ function ExerciseCard({ ex }: { ex: any }) {
   );
 }
 
+function audioSource(audioUrl: string) {
+  return audioUrl.startsWith("/objects/") ? `/api/storage${audioUrl}` : audioUrl;
+}
+
+function formatMessageTime(timestamp: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
+function ClientMessageThread({
+  programId,
+  token,
+  messages,
+}: {
+  programId: string;
+  token: string;
+  messages: HomeworkMessage[];
+}) {
+  const queryClient = useQueryClient();
+  const [draft, setDraft] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const { uploadFile, isUploading } = useUpload();
+
+  const sendMessage = useCreateHomeworkClientMessage({
+    mutation: {
+      onSuccess: () => {
+        setDraft("");
+        queryClient.invalidateQueries({ queryKey: getGetHomeworkViewQueryKey(token) });
+      },
+      onError: () => setVoiceError("Your message could not be sent. Please try again."),
+    },
+  });
+
+  useEffect(() => () => {
+    recorderRef.current?.state !== "inactive" && recorderRef.current?.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
+  function submitText() {
+    const content = draft.trim();
+    if (!content || sendMessage.isPending) return;
+    setVoiceError(null);
+    sendMessage.mutate({ token, programId, data: { content } });
+  }
+
+  async function startRecording() {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setVoiceError("Voice notes are not supported in this browser.");
+      return;
+    }
+
+    try {
+      setVoiceError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks: BlobPart[] = [];
+      const recorder = new MediaRecorder(stream);
+      streamRef.current = stream;
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        recorderRef.current = null;
+        setIsRecording(false);
+        const audio = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+        if (!audio.size) {
+          setVoiceError("No audio was captured. Please try recording again.");
+          return;
+        }
+        const file = new File([audio], `voice-note-${Date.now()}.webm`, { type: audio.type });
+        const uploaded = await uploadFile(file);
+        if (!uploaded) {
+          setVoiceError("Your voice note could not be uploaded. Please try again.");
+          return;
+        }
+        sendMessage.mutate({ token, programId, data: { audioUrl: uploaded.objectPath } });
+      };
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      setVoiceError("Microphone access was not available. Please allow it and try again.");
+    }
+  }
+
+  function stopRecording() {
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }
+
+  const isSending = sendMessage.isPending || isUploading;
+
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
+        <MessageCircle size={17} className="text-green-700" />
+        <div>
+          <h3 className="font-semibold text-gray-900 text-sm">Message your practitioner</h3>
+          <p className="text-xs text-gray-500">Ask a question or share how you’re feeling.</p>
+        </div>
+      </div>
+
+      <div className="px-5 py-4 space-y-3 max-h-72 overflow-y-auto bg-gray-50/60">
+        {messages.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-3">No messages yet. Your practitioner is here if you need help.</p>
+        ) : messages.map((message) => {
+          const isClient = message.senderRole === "client";
+          return (
+            <div key={message.id} className={`flex ${isClient ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${isClient ? "bg-green-600 text-white rounded-br-md" : "bg-white border border-gray-100 text-gray-800 rounded-bl-md"}`}>
+                <p className={`text-[11px] font-medium mb-1 ${isClient ? "text-green-100" : "text-gray-400"}`}>
+                  {isClient ? "You" : "Your practitioner"} · {formatMessageTime(message.createdAt)}
+                </p>
+                {message.content && <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>}
+                {message.audioUrl && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Volume2 size={15} aria-hidden="true" />
+                    <audio controls className="h-8 max-w-[195px]" src={audioSource(message.audioUrl)}>
+                      Your browser does not support audio playback.
+                    </audio>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="p-4 border-t border-gray-100">
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              submitText();
+            }
+          }}
+          maxLength={5000}
+          placeholder="Write a message…"
+          disabled={isSending || isRecording}
+          className="w-full min-h-20 resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500"
+        />
+        {voiceError && <p className="mt-2 text-xs text-red-600">{voiceError}</p>}
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isSending}
+            className={`inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-2 transition-colors ${isRecording ? "bg-red-50 text-red-700 hover:bg-red-100" : "text-gray-600 hover:bg-gray-100"}`}
+          >
+            {isRecording ? <Square size={13} fill="currentColor" /> : <Mic size={14} />}
+            {isRecording ? "Stop recording" : isUploading ? "Uploading…" : "Voice note"}
+          </button>
+          <button
+            type="button"
+            onClick={submitText}
+            disabled={!draft.trim() || isSending || isRecording}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-3.5 py-2 text-sm font-medium transition-colors"
+          >
+            <Send size={14} /> {sendMessage.isPending ? "Sending…" : "Send"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HomeworkView() {
   const params = useParams<{ token: string }>();
   const token = params.token ?? "";
 
   const { data, isLoading, isError } = useGetHomeworkView(token, {
-    query: { enabled: !!token },
+    query: { enabled: !!token, queryKey: getGetHomeworkViewQueryKey(token) },
   });
 
   if (isLoading) {
@@ -157,6 +339,9 @@ export default function HomeworkView() {
                   ))
                 )}
               </div>
+               <div className="mt-5">
+                 <ClientMessageThread programId={program.id} token={token} messages={program.messages ?? []} />
+               </div>
             </section>
           ))
         )}

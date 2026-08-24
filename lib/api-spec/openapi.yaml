@@ -663,6 +663,61 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/HomeworkView" }
         "404": { description: Token not found or expired }
+  /homework/view/{token}/programs/{programId}/messages:
+    post:
+      tags: [homework]
+      operationId: createHomeworkClientMessage
+      summary: Send a message from a client magic-link view
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HomeworkMessageInput" }
+      responses:
+        "201":
+          description: Message created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkMessage" }
+        "404": { description: Token or program not found }
+
+  /homework/programs/{programId}/messages:
+    get:
+      tags: [homework]
+      operationId: listHomeworkMessages
+      summary: List messages for a homework program
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Program messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HomeworkMessage" }
+        "404": { description: Program not found }
+    post:
+      tags: [homework]
+      operationId: createHomeworkPractitionerMessage
+      summary: Send a message from a practitioner
+      parameters:
+        - { name: programId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HomeworkMessageInput" }
+      responses:
+        "201":
+          description: Message created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkMessage" }
+        "404": { description: Program not found }
 
 components:
   schemas:
@@ -1077,3 +1132,22 @@ components:
               exercises:
                 type: array
                 items: { $ref: "#/components/schemas/HomeworkExercise" }
+              messages:
+                type: array
+                items: { $ref: "#/components/schemas/HomeworkMessage" }
+    HomeworkMessage:
+      type: object
+      required: [id, programId, clientId, senderRole, createdAt]
+      properties:
+        id: { type: string }
+        programId: { type: string }
+        clientId: { type: string }
+        senderRole: { type: string, enum: [client, practitioner] }
+        content: { type: string, nullable: true }
+        audioUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    HomeworkMessageInput:
+      type: object
+      properties:
+        content: { type: string, nullable: true, maxLength: 5000 }
+        audioUrl: { type: string, nullable: true, maxLength: 2048 }

@@ -1,5 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, homeworkProgramsTable, homeworkExercisesTable, magicLinkTokensTable, clientsTable } from "@workspace/db";
+import {
+  db,
+  homeworkProgramsTable,
+  homeworkExercisesTable,
+  homeworkMessagesTable,
+  magicLinkTokensTable,
+  clientsTable,
+} from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { randomBytes } from "crypto";
@@ -39,6 +46,14 @@ const NewExerciseBody = z.object({
 
 const UpdateExerciseBody = NewExerciseBody.partial();
 
+const NewMessageBody = z.object({
+  content: z.string().max(5000).optional().nullable(),
+  audioUrl: z.string().max(2048).optional().nullable(),
+}).refine(
+  (body) => Boolean(body.audioUrl) || Boolean(body.content?.trim()),
+  "A message must include text or a voice note",
+);
+
 // ── Serialize helpers ─────────────────────────────────────────────────────────
 
 function serializeProgram(p: typeof homeworkProgramsTable.$inferSelect) {
@@ -70,6 +85,42 @@ function serializeExercise(e: typeof homeworkExercisesTable.$inferSelect) {
     position: e.position,
     createdAt: e.createdAt.toISOString(),
   };
+}
+
+function serializeMessage(m: typeof homeworkMessagesTable.$inferSelect) {
+  return {
+    id: m.id,
+    programId: m.programId,
+    clientId: m.clientId,
+    senderRole: m.senderRole,
+    content: m.content,
+    audioUrl: m.audioUrl,
+    createdAt: m.createdAt.toISOString(),
+  };
+}
+
+async function getProgram(programId: string) {
+  const [program] = await db.select().from(homeworkProgramsTable)
+    .where(eq(homeworkProgramsTable.id, programId));
+  return program;
+}
+
+async function createMessage(
+  programId: string,
+  senderRole: "client" | "practitioner",
+  body: z.infer<typeof NewMessageBody>,
+) {
+  const program = await getProgram(programId);
+  if (!program) return null;
+
+  const [message] = await db.insert(homeworkMessagesTable).values({
+    programId,
+    clientId: program.clientId,
+    senderRole,
+    content: body.content?.trim() || null,
+    audioUrl: body.audioUrl || null,
+  }).returning();
+  return message;
 }
 
 // ── Programs ──────────────────────────────────────────────────────────────────
@@ -174,6 +225,29 @@ router.delete("/homework/exercises/:exerciseId", async (req: Request, res: Respo
   res.status(204).send();
 });
 
+// ── Messages ──────────────────────────────────────────────────────────────────
+
+router.get("/homework/programs/:programId/messages", async (req: Request, res: Response) => {
+  const programId = String(req.params["programId"]);
+  const program = await getProgram(programId);
+  if (!program) { res.status(404).json({ error: "Program not found" }); return; }
+
+  const rows = await db.select().from(homeworkMessagesTable)
+    .where(eq(homeworkMessagesTable.programId, programId))
+    .orderBy(homeworkMessagesTable.createdAt);
+  res.json(rows.map(serializeMessage));
+});
+
+router.post("/homework/programs/:programId/messages", async (req: Request, res: Response) => {
+  const programId = String(req.params["programId"]);
+  const parsed = NewMessageBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const row = await createMessage(programId, "practitioner", parsed.data);
+  if (!row) { res.status(404).json({ error: "Program not found" }); return; }
+  res.status(201).json(serializeMessage(row));
+});
+
 // ── Send reminder ─────────────────────────────────────────────────────────────
 
 router.post("/homework/programs/:programId/send-reminder", async (req: Request, res: Response) => {
@@ -252,11 +326,38 @@ router.get("/homework/view/:token", async (req: Request, res: Response) => {
         title: p.title,
         notes: p.notes,
         exercises: exercises.map(serializeExercise),
+        messages: (await db.select().from(homeworkMessagesTable)
+          .where(eq(homeworkMessagesTable.programId, p.id))
+          .orderBy(homeworkMessagesTable.createdAt)).map(serializeMessage),
       };
     })
   );
 
   res.json({ clientName: client.name, programs: programsWithExercises });
+});
+
+router.post("/homework/view/:token/programs/:programId/messages", async (req: Request, res: Response) => {
+  const token = String(req.params["token"]);
+  const programId = String(req.params["programId"]);
+
+  const parsed = NewMessageBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [tokenRow] = await db.select().from(magicLinkTokensTable)
+    .where(eq(magicLinkTokensTable.token, token));
+  if (!tokenRow) { res.status(404).json({ error: "Not found" }); return; }
+
+  const [program] = await db.select().from(homeworkProgramsTable)
+    .where(and(
+      eq(homeworkProgramsTable.id, programId),
+      eq(homeworkProgramsTable.clientId, tokenRow.clientId),
+      eq(homeworkProgramsTable.isActive, true),
+    ));
+  if (!program) { res.status(404).json({ error: "Program not found" }); return; }
+
+  const row = await createMessage(programId, "client", parsed.data);
+  if (!row) { res.status(404).json({ error: "Program not found" }); return; }
+  res.status(201).json(serializeMessage(row));
 });
 
 export default router;

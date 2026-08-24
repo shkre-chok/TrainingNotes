@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   Plus, Dumbbell, Pencil, Trash2, Send, Link2, Copy, Check,
-  ChevronDown, ChevronUp, Play, Calendar
+  ChevronDown, ChevronUp, Play, Calendar, MessageCircle, Volume2
 } from "lucide-react";
 import {
   useListHomeworkPrograms, getListHomeworkProgramsQueryKey,
@@ -18,6 +18,9 @@ import {
   useDeleteHomeworkExercise,
   useSendHomeworkReminder,
   useListVideoLibrary, getListVideoLibraryQueryKey,
+  useListHomeworkMessages, getListHomeworkMessagesQueryKey,
+  useCreateHomeworkPractitionerMessage,
+  type HomeworkMessage,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -400,6 +403,114 @@ function ExerciseCard({
   );
 }
 
+function audioSource(audioUrl: string) {
+  return audioUrl.startsWith("/objects/") ? `/api/storage${audioUrl}` : audioUrl;
+}
+
+function formatMessageTime(timestamp: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
+function PractitionerMessageThread({ programId, clientName }: { programId: string; clientName: string }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [draft, setDraft] = useState("");
+  const { data: messages, isLoading } = useListHomeworkMessages(programId, {
+    query: { queryKey: getListHomeworkMessagesQueryKey(programId) },
+  });
+  const sendReply = useCreateHomeworkPractitionerMessage({
+    mutation: {
+      onSuccess: () => {
+        setDraft("");
+        queryClient.invalidateQueries({ queryKey: getListHomeworkMessagesQueryKey(programId) });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Reply not sent",
+          description: error?.message ?? "Please try again.",
+          variant: "destructive",
+        });
+      },
+    },
+  });
+
+  function submitReply() {
+    const content = draft.trim();
+    if (!content || sendReply.isPending) return;
+    sendReply.mutate({ programId, data: { content } });
+  }
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-background">
+        <MessageCircle size={16} className="text-primary" />
+        <div>
+          <h4 className="text-sm font-medium text-foreground">Messages with {clientName}</h4>
+          <p className="text-xs text-muted-foreground">Replies appear on their next link visit.</p>
+        </div>
+      </div>
+
+      <div className="max-h-72 overflow-y-auto p-4 space-y-3">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground animate-pulse">Loading messages…</p>
+        ) : !messages?.length ? (
+          <p className="text-sm text-muted-foreground text-center py-3">No messages from {clientName} yet.</p>
+        ) : (
+          messages.map((message: HomeworkMessage) => {
+            const fromPractitioner = message.senderRole === "practitioner";
+            return (
+              <div key={message.id} className={`flex ${fromPractitioner ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] rounded-xl px-3 py-2 ${fromPractitioner ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-background border border-border/50 text-foreground rounded-bl-sm"}`}>
+                  <p className={`text-[11px] font-medium mb-1 ${fromPractitioner ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                    {fromPractitioner ? "You" : clientName} · {formatMessageTime(message.createdAt)}
+                  </p>
+                  {message.content && <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>}
+                  {message.audioUrl && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Volume2 size={14} aria-hidden="true" />
+                      <audio controls className="h-8 max-w-[210px]" src={audioSource(message.audioUrl)}>
+                        Your browser does not support audio playback.
+                      </audio>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="p-3 border-t border-border/50 bg-background">
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              submitReply();
+            }
+          }}
+          maxLength={5000}
+          placeholder={`Reply to ${clientName}…`}
+          className="min-h-[72px] resize-y text-sm"
+          disabled={sendReply.isPending}
+        />
+        <div className="mt-2 flex justify-end">
+          <Button size="sm" onClick={submitReply} disabled={!draft.trim() || sendReply.isPending}>
+            <Send size={13} className="mr-1.5" />
+            {sendReply.isPending ? "Sending…" : "Send reply"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Program section ───────────────────────────────────────────────────────────
 
 function ProgramSection({ program, clientName, clientEmail }: { program: any; clientName: string; clientEmail?: string | null }) {
@@ -492,6 +603,8 @@ function ProgramSection({ program, clientName, clientEmail }: { program: any; cl
           ))}
         </div>
       )}
+
+      <PractitionerMessageThread programId={program.id} clientName={clientName} />
 
       <Button size="sm" variant="outline" className="border-dashed border-border w-full text-muted-foreground hover:text-foreground h-9"
         onClick={() => setAddOpen(true)}>

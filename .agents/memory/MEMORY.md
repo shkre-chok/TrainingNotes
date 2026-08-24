@@ -1,3 +1,4 @@
 - [Codegen clean mode](codegen-clean-mode.md) — orval `clean:true` deletes all split files; after codegen, restart Vite to clear its module cache (delete node_modules/.vite)
+- [OpenAPI mixed parameters](openapi-mixed-parameters.md) — Orval Zod barrels collide when one operation combines path and query parameters.
 - [HomeworkTab durationSeconds](homework-duration.md) — durationSeconds stored as integer seconds; UI splits into mins+secs inputs; compute before mutate
 - [Video library route](video-library-route.md) — `/video-library` page at artifacts/rehab-tracker/src/pages/video-library/index.tsx; backend CRUD at /api/video-library

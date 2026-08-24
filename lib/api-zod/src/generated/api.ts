@@ -892,6 +892,84 @@ export const GetHomeworkViewResponse = zod.object({
           createdAt: zod.coerce.date(),
         }),
       ),
+      messages: zod
+        .array(
+          zod.object({
+            id: zod.string(),
+            programId: zod.string(),
+            clientId: zod.string(),
+            senderRole: zod.enum(["client", "practitioner"]),
+            content: zod.string().nullish(),
+            audioUrl: zod.string().nullish(),
+            createdAt: zod.coerce.date(),
+          }),
+        )
+        .optional(),
     }),
   ),
+});
+
+/**
+ * @summary Send a message from a client magic-link view
+ */
+export const CreateHomeworkClientMessageParams = zod.object({
+  token: zod.coerce.string(),
+  programId: zod.coerce.string(),
+});
+
+export const createHomeworkClientMessageBodyContentMax = 5000;
+
+export const createHomeworkClientMessageBodyAudioUrlMax = 2048;
+
+export const CreateHomeworkClientMessageBody = zod.object({
+  content: zod
+    .string()
+    .max(createHomeworkClientMessageBodyContentMax)
+    .nullish(),
+  audioUrl: zod
+    .string()
+    .max(createHomeworkClientMessageBodyAudioUrlMax)
+    .nullish(),
+});
+
+/**
+ * @summary List messages for a homework program
+ */
+export const ListHomeworkMessagesParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const ListHomeworkMessagesResponseItem = zod.object({
+  id: zod.string(),
+  programId: zod.string(),
+  clientId: zod.string(),
+  senderRole: zod.enum(["client", "practitioner"]),
+  content: zod.string().nullish(),
+  audioUrl: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListHomeworkMessagesResponse = zod.array(
+  ListHomeworkMessagesResponseItem,
+);
+
+/**
+ * @summary Send a message from a practitioner
+ */
+export const CreateHomeworkPractitionerMessageParams = zod.object({
+  programId: zod.coerce.string(),
+});
+
+export const createHomeworkPractitionerMessageBodyContentMax = 5000;
+
+export const createHomeworkPractitionerMessageBodyAudioUrlMax = 2048;
+
+export const CreateHomeworkPractitionerMessageBody = zod.object({
+  content: zod
+    .string()
+    .max(createHomeworkPractitionerMessageBodyContentMax)
+    .nullish(),
+  audioUrl: zod
+    .string()
+    .max(createHomeworkPractitionerMessageBodyAudioUrlMax)
+    .nullish(),
 });

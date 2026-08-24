@@ -31,6 +31,8 @@ import type {
   HealthStatus,
   HomeworkExercise,
   HomeworkExerciseUpdate,
+  HomeworkMessage,
+  HomeworkMessageInput,
   HomeworkProgram,
   HomeworkProgramUpdate,
   HomeworkView,
@@ -3877,3 +3879,280 @@ export function useGetHomeworkView<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Send a message from a client magic-link view
+ */
+export const getCreateHomeworkClientMessageUrl = (
+  token: string,
+  programId: string,
+) => {
+  return `/api/homework/view/${token}/programs/${programId}/messages`;
+};
+
+export const createHomeworkClientMessage = async (
+  token: string,
+  programId: string,
+  homeworkMessageInput: HomeworkMessageInput,
+  options?: RequestInit,
+): Promise<HomeworkMessage> => {
+  return customFetch<HomeworkMessage>(
+    getCreateHomeworkClientMessageUrl(token, programId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(homeworkMessageInput),
+    },
+  );
+};
+
+export const getCreateHomeworkClientMessageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHomeworkClientMessage>>,
+    TError,
+    { token: string; programId: string; data: BodyType<HomeworkMessageInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHomeworkClientMessage>>,
+  TError,
+  { token: string; programId: string; data: BodyType<HomeworkMessageInput> },
+  TContext
+> => {
+  const mutationKey = ["createHomeworkClientMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHomeworkClientMessage>>,
+    { token: string; programId: string; data: BodyType<HomeworkMessageInput> }
+  > = (props) => {
+    const { token, programId, data } = props ?? {};
+
+    return createHomeworkClientMessage(token, programId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHomeworkClientMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHomeworkClientMessage>>
+>;
+export type CreateHomeworkClientMessageMutationBody =
+  BodyType<HomeworkMessageInput>;
+export type CreateHomeworkClientMessageMutationError = ErrorType<void>;
+
+/**
+ * @summary Send a message from a client magic-link view
+ */
+export const useCreateHomeworkClientMessage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHomeworkClientMessage>>,
+    TError,
+    { token: string; programId: string; data: BodyType<HomeworkMessageInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHomeworkClientMessage>>,
+  TError,
+  { token: string; programId: string; data: BodyType<HomeworkMessageInput> },
+  TContext
+> => {
+  return useMutation(getCreateHomeworkClientMessageMutationOptions(options));
+};
+
+/**
+ * @summary List messages for a homework program
+ */
+export const getListHomeworkMessagesUrl = (programId: string) => {
+  return `/api/homework/programs/${programId}/messages`;
+};
+
+export const listHomeworkMessages = async (
+  programId: string,
+  options?: RequestInit,
+): Promise<HomeworkMessage[]> => {
+  return customFetch<HomeworkMessage[]>(getListHomeworkMessagesUrl(programId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListHomeworkMessagesQueryKey = (programId: string) => {
+  return [`/api/homework/programs/${programId}/messages`] as const;
+};
+
+export const getListHomeworkMessagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHomeworkMessages>>,
+  TError = ErrorType<void>,
+>(
+  programId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHomeworkMessages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListHomeworkMessagesQueryKey(programId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listHomeworkMessages>>
+  > = ({ signal }) =>
+    listHomeworkMessages(programId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!programId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHomeworkMessages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHomeworkMessagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHomeworkMessages>>
+>;
+export type ListHomeworkMessagesQueryError = ErrorType<void>;
+
+/**
+ * @summary List messages for a homework program
+ */
+
+export function useListHomeworkMessages<
+  TData = Awaited<ReturnType<typeof listHomeworkMessages>>,
+  TError = ErrorType<void>,
+>(
+  programId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHomeworkMessages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHomeworkMessagesQueryOptions(programId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Send a message from a practitioner
+ */
+export const getCreateHomeworkPractitionerMessageUrl = (programId: string) => {
+  return `/api/homework/programs/${programId}/messages`;
+};
+
+export const createHomeworkPractitionerMessage = async (
+  programId: string,
+  homeworkMessageInput: HomeworkMessageInput,
+  options?: RequestInit,
+): Promise<HomeworkMessage> => {
+  return customFetch<HomeworkMessage>(
+    getCreateHomeworkPractitionerMessageUrl(programId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(homeworkMessageInput),
+    },
+  );
+};
+
+export const getCreateHomeworkPractitionerMessageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHomeworkPractitionerMessage>>,
+    TError,
+    { programId: string; data: BodyType<HomeworkMessageInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHomeworkPractitionerMessage>>,
+  TError,
+  { programId: string; data: BodyType<HomeworkMessageInput> },
+  TContext
+> => {
+  const mutationKey = ["createHomeworkPractitionerMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHomeworkPractitionerMessage>>,
+    { programId: string; data: BodyType<HomeworkMessageInput> }
+  > = (props) => {
+    const { programId, data } = props ?? {};
+
+    return createHomeworkPractitionerMessage(programId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHomeworkPractitionerMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHomeworkPractitionerMessage>>
+>;
+export type CreateHomeworkPractitionerMessageMutationBody =
+  BodyType<HomeworkMessageInput>;
+export type CreateHomeworkPractitionerMessageMutationError = ErrorType<void>;
+
+/**
+ * @summary Send a message from a practitioner
+ */
+export const useCreateHomeworkPractitionerMessage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHomeworkPractitionerMessage>>,
+    TError,
+    { programId: string; data: BodyType<HomeworkMessageInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHomeworkPractitionerMessage>>,
+  TError,
+  { programId: string; data: BodyType<HomeworkMessageInput> },
+  TContext
+> => {
+  return useMutation(
+    getCreateHomeworkPractitionerMessageMutationOptions(options),
+  );
+};
