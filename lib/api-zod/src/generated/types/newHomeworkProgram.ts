@@ -12,13 +12,13 @@ export interface NewHomeworkProgram {
   /** @nullable */
   notes?: string | null;
   /**
-   * Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.
+   * Hourly schedule in hourly:<hours> format, from 1 to 24 hours. Legacy weekly schedules remain readable.
    * @nullable
-   * @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$
+   * @pattern ^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d)$
    */
   reminderSchedule?: string | null;
   /**
-   * IANA timezone used to interpret the reminder schedule.
+   * IANA timezone used only by legacy weekly schedules.
    * @nullable
    */
   reminderTimezone?: string | null;

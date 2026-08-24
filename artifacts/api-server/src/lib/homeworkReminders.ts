@@ -34,10 +34,10 @@ export function parseReminderSchedule(value: string | null | undefined): Reminde
   if (!value) return null;
   const match = REMINDER_SCHEDULE_PATTERN.exec(value);
   if (!match) return null;
-  if (match[5]) {
+  if (match[4]) {
     return {
       kind: "hourly",
-      intervalHours: Number(match[5]),
+      intervalHours: Number(match[4]),
     };
   }
   return {
@@ -128,6 +128,7 @@ function getMostRecentScheduledOccurrence(schedule: ReminderSchedule, now: Date,
   }
   const thisWeekOccurrence = getThisWeekScheduledOccurrence(schedule, now, timeZone);
   if (now >= thisWeekOccurrence) return thisWeekOccurrence;
+  if (schedule.kind !== "weekly" || schedule.time === undefined) return now;
   const parts = getZonedDateParts(thisWeekOccurrence, timeZone);
   const previousWeek = shiftCalendarDate(parts.year, parts.month, parts.day, -7);
   return zonedDateTimeToUtc(previousWeek, schedule.time, timeZone);

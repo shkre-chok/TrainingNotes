@@ -1160,7 +1160,7 @@ components:
               title: { type: string }
               notes: { type: string, nullable: true }
               reminderEnabled: { type: boolean }
-              reminderSchedule: { type: string, nullable: true, pattern: "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$" }
+              reminderSchedule: { type: string, nullable: true, pattern: "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$" }
               exercises:
                 type: array
                 items: { $ref: "#/components/schemas/HomeworkExercise" }

@@ -5,3 +5,4 @@
 - [Expo preview verification](expo-preview-verification.md) — the automated browser runner can hit transient 502s for Expo previews even when direct screenshots render correctly.
 - [Homework chat synchronization](homework-chat-websocket.md) — acknowledged subscriptions include an authoritative message snapshot; practitioner WS scope mirrors the current unauthenticated REST model.
 - [Workspace type declarations](workspace-type-declarations.md) — rebuild shared project-reference declarations before artifact typechecks after schema merges.
+- [Homework reminder schedules](homework-reminder-schedules.md) — hourly intervals use `hourly:<hours>`; legacy weekly schedules remain readable and timezone-aware

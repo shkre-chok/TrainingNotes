@@ -705,7 +705,7 @@ export const ListHomeworkProgramsQueryParams = zod.object({
 });
 
 export const listHomeworkProgramsResponseReminderScheduleRegExp = new RegExp(
-  "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$",
+  "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$",
 );
 
 export const ListHomeworkProgramsResponseItem = zod.object({
@@ -719,12 +719,12 @@ export const ListHomeworkProgramsResponseItem = zod.object({
     .regex(listHomeworkProgramsResponseReminderScheduleRegExp)
     .nullish()
     .describe(
-      "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.",
+      "Hourly schedule in hourly:<hours> format, from 1 to 24 hours. Legacy weekly schedules remain readable.",
     ),
   reminderTimezone: zod
     .string()
     .nullish()
-    .describe("IANA timezone used to interpret the reminder schedule."),
+    .describe("IANA timezone used only by legacy weekly schedules."),
   reminderEnabled: zod.boolean(),
   lastSentAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
@@ -734,7 +734,7 @@ export const ListHomeworkProgramsResponse = zod.array(
 );
 
 export const createHomeworkProgramBodyReminderScheduleRegExp = new RegExp(
-  "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$",
+  "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$",
 );
 export const createHomeworkProgramBodyReminderEnabledDefault = false;
 
@@ -747,12 +747,12 @@ export const CreateHomeworkProgramBody = zod.object({
     .regex(createHomeworkProgramBodyReminderScheduleRegExp)
     .nullish()
     .describe(
-      "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.",
+      "Hourly schedule in hourly:<hours> format, from 1 to 24 hours. Legacy weekly schedules remain readable.",
     ),
   reminderTimezone: zod
     .string()
     .nullish()
-    .describe("IANA timezone used to interpret the reminder schedule."),
+    .describe("IANA timezone used only by legacy weekly schedules."),
   reminderEnabled: zod
     .boolean()
     .default(createHomeworkProgramBodyReminderEnabledDefault),
@@ -763,7 +763,7 @@ export const GetHomeworkProgramParams = zod.object({
 });
 
 export const getHomeworkProgramResponseReminderScheduleRegExp = new RegExp(
-  "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$",
+  "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$",
 );
 
 export const GetHomeworkProgramResponse = zod.object({
@@ -777,12 +777,12 @@ export const GetHomeworkProgramResponse = zod.object({
     .regex(getHomeworkProgramResponseReminderScheduleRegExp)
     .nullish()
     .describe(
-      "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.",
+      "Hourly schedule in hourly:<hours> format, from 1 to 24 hours. Legacy weekly schedules remain readable.",
     ),
   reminderTimezone: zod
     .string()
     .nullish()
-    .describe("IANA timezone used to interpret the reminder schedule."),
+    .describe("IANA timezone used only by legacy weekly schedules."),
   reminderEnabled: zod.boolean(),
   lastSentAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
@@ -793,7 +793,7 @@ export const UpdateHomeworkProgramParams = zod.object({
 });
 
 export const updateHomeworkProgramBodyReminderScheduleRegExp = new RegExp(
-  "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$",
+  "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$",
 );
 
 export const UpdateHomeworkProgramBody = zod.object({
@@ -805,17 +805,17 @@ export const UpdateHomeworkProgramBody = zod.object({
     .regex(updateHomeworkProgramBodyReminderScheduleRegExp)
     .nullish()
     .describe(
-      "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.",
+      "Hourly schedule in hourly:<hours> format, from 1 to 24 hours. Legacy weekly schedules remain readable.",
     ),
   reminderTimezone: zod
     .string()
     .nullish()
-    .describe("IANA timezone used to interpret the reminder schedule."),
+    .describe("IANA timezone used only by legacy weekly schedules."),
   reminderEnabled: zod.boolean().optional(),
 });
 
 export const updateHomeworkProgramResponseReminderScheduleRegExp = new RegExp(
-  "^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$",
+  "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$",
 );
 
 export const UpdateHomeworkProgramResponse = zod.object({
@@ -829,12 +829,12 @@ export const UpdateHomeworkProgramResponse = zod.object({
     .regex(updateHomeworkProgramResponseReminderScheduleRegExp)
     .nullish()
     .describe(
-      "Weekly schedule in weekly:<day-of-week>:<HH:mm> format, where day 0 is Sunday.",
+      "Hourly schedule in hourly:<hours> format, from 1 to 24 hours. Legacy weekly schedules remain readable.",
     ),
   reminderTimezone: zod
     .string()
     .nullish()
-    .describe("IANA timezone used to interpret the reminder schedule."),
+    .describe("IANA timezone used only by legacy weekly schedules."),
   reminderEnabled: zod.boolean(),
   lastSentAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
@@ -952,7 +952,9 @@ export const GetHomeworkViewParams = zod.object({
 });
 
 export const getHomeworkViewResponseProgramsItemReminderScheduleRegExp =
-  new RegExp("^weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d$");
+  new RegExp(
+    "^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\\d|2[0-3]):[0-5]\\d)$",
+  );
 
 export const GetHomeworkViewResponse = zod.object({
   clientName: zod.string(),

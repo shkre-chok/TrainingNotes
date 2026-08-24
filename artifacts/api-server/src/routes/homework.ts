@@ -29,6 +29,8 @@ const ReminderTimezone = z.string().min(1).refine((value) => {
     return false;
   }
 }, "Invalid reminder timezone");
+const requiresReminderTimezone = (schedule: string | null | undefined) =>
+  Boolean(schedule?.startsWith("weekly:"));
 
 const NewProgramBody = z.object({
   clientId: z.string(),
@@ -38,8 +40,12 @@ const NewProgramBody = z.object({
   reminderTimezone: ReminderTimezone.optional().nullable(),
   reminderEnabled: z.boolean().optional().default(false),
 }).refine(
-  (body) => !body.reminderEnabled || Boolean(body.reminderSchedule && body.reminderTimezone),
-  "An enabled reminder requires a schedule and timezone",
+  (body) =>
+    !body.reminderEnabled ||
+    Boolean(body.reminderSchedule && (
+      !requiresReminderTimezone(body.reminderSchedule) || body.reminderTimezone
+    )),
+  "An enabled reminder requires a schedule; weekly schedules also require a timezone",
 );
 
 const UpdateProgramBody = z.object({
@@ -187,8 +193,11 @@ router.patch("/homework/programs/:programId", async (req: Request, res: Response
   const reminderTimezone = body.reminderTimezone === undefined
     ? existing.reminderTimezone
     : body.reminderTimezone;
-  if (reminderEnabled && (!reminderSchedule || !reminderTimezone)) {
-    res.status(400).json({ error: "An enabled reminder requires a schedule and timezone" });
+  if (reminderEnabled && (
+    !reminderSchedule ||
+    (requiresReminderTimezone(reminderSchedule) && !reminderTimezone)
+  )) {
+    res.status(400).json({ error: "An enabled reminder requires a schedule; weekly schedules also require a timezone" });
     return;
   }
   const [row] = await db.update(homeworkProgramsTable).set({

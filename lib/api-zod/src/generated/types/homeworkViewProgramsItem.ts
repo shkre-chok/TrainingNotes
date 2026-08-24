@@ -13,7 +13,7 @@ export type HomeworkViewProgramsItem = {
   title: string;
   notes?: string | null;
   reminderEnabled?: boolean;
-  /** @pattern ^weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d$ */
+  /** @pattern ^(?:hourly:([1-9]|1[0-9]|2[0-4])|weekly:[0-6]:([01]\d|2[0-3]):[0-5]\d)$ */
   reminderSchedule?: string | null;
   exercises: HomeworkExercise[];
   messages?: HomeworkMessage[];
