@@ -204,7 +204,7 @@ export default function ClientDetail() {
                     </span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="hidden sm:flex border-border/50" onClick={openEditClient}>
+                <Button variant="outline" size="sm" className="flex shrink-0 border-border/50" onClick={openEditClient}>
                   <Edit3 size={14} className="mr-2" /> Edit Profile
                 </Button>
               </div>
@@ -465,7 +465,7 @@ export default function ClientDetail() {
 
       {/* Edit Client Dialog */}
       <Dialog open={isEditClientOpen} onOpenChange={setIsEditClientOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+          <DialogContent className="w-[calc(100%-2rem)] max-h-[90dvh] overflow-y-auto sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle className="font-serif">Edit Client Profile</DialogTitle>
           </DialogHeader>
@@ -496,7 +496,7 @@ export default function ClientDetail() {
                   <FormControl><Input placeholder="e.g. Post-ACL reconstruction" {...field} /></FormControl>
                 </FormItem>
               )} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <FormField control={editClientForm.control} name="phone" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
