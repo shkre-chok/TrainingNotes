@@ -20,7 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [location] = useLocation();
 
   return (
-    <div className="flex h-screen bg-background flex-col md:flex-row overflow-hidden">
+    <div className="flex min-h-screen bg-background flex-col overflow-x-hidden md:h-screen md:flex-row md:overflow-hidden">
       <aside className="w-full md:w-64 bg-sidebar border-b md:border-b-0 md:border-r border-sidebar-border flex-shrink-0 flex flex-col">
         <div className="p-6">
           <Link href="/">
@@ -78,8 +78,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
       
-      <main className="flex-1 flex flex-col min-w-0 max-w-full">
-        <div className="flex-1 overflow-auto p-4 md:p-8 lg:p-10">
+      <main className="flex-1 flex flex-col min-w-0 max-w-full md:min-h-0">
+        <div className="flex-1 p-4 md:min-h-0 md:overflow-y-auto md:overscroll-contain md:p-8 lg:p-10">
           <div className="max-w-5xl mx-auto">
             {children}
           </div>
