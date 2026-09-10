@@ -64,6 +64,23 @@ export async function sendHomeworkReminderEmail(opts: {
   idempotencyKey?: string;
 }) {
   const { toEmail, clientName, magicLink, appLink, programTitle, exercises, idempotencyKey } = opts;
+
+  if (process.env.EMAIL_DRIVER === 'console') {
+    const plainText = [
+      `Hi ${clientName},`,
+      "",
+      `Here's your homework program: ${programTitle}`,
+      ...exercises.map((ex) => `- ${ex.name}: ${formatFrequency(ex)}${formatSets(ex) ? ` · ${formatSets(ex)}` : ""}`),
+      "",
+      `View the full program: ${magicLink}`,
+      ...(appLink ? [`Open in the Homework Companion: ${appLink}`] : []),
+    ].join("\n");
+    console.log(
+      `[email:console] To: ${toEmail}\n[email:console] Subject: Your homework: ${programTitle}\n${plainText}`,
+    );
+    return { id: `console-${idempotencyKey ?? Date.now()}` };
+  }
+
   const safeClientName = escapeHtml(clientName);
   const safeProgramTitle = escapeHtml(programTitle);
 

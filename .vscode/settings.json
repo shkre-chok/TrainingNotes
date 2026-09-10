@@ -1,0 +1,15 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/dist": true,
+    "**/.data": true
+  },
+  "search.exclude": {
+    "**/pnpm-lock.yaml": true,
+    "**/dist": true,
+    "**/.data": true
+  }
+}
