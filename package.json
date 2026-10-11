@@ -9,11 +9,12 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:push": "pnpm --filter db push",
+    "db:push": "set -a; . ./.env; set +a; pnpm --filter db push",
     "dev:api": "set -a; . ./.env; set +a; PORT=${API_PORT:-8080} pnpm --filter @workspace/api-server run dev",
     "dev:web": "set -a; . ./.env; set +a; PORT=${WEB_PORT:-5173} BASE_PATH=/ pnpm --filter @workspace/rehab-tracker run dev"
   },
   "private": true,
+  "packageManager": "pnpm@10.34.6",
   "pnpm": {
     "overrides": {
       "react": "19.1.0",
