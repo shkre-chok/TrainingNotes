@@ -66,6 +66,14 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // On Replit a shared proxy routes /api to the API server; locally we do it here.
+    ...(process.env.REPL_ID === undefined
+      ? {
+          proxy: {
+            "/api": `http://localhost:${process.env.API_PORT ?? "8080"}`,
+          },
+        }
+      : {}),
   },
   preview: {
     port,

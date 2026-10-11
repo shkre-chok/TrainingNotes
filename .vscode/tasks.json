@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "docker: start postgres",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: stop postgres",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "db: push schema",
+      "type": "npm",
+      "script": "db:push",
+      "problemMatcher": []
+    },
+    {
+      "label": "api-server: build",
+      "type": "npm",
+      "script": "build",
+      "path": "artifacts/api-server",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "dev: api-server",
+      "type": "npm",
+      "script": "dev:api",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: web (rehab-tracker)",
+      "type": "npm",
+      "script": "dev:web",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

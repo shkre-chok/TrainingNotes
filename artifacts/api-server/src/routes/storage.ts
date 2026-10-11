@@ -3,16 +3,22 @@ import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from '@workspace/api-zod';
-import { Router, type IRouter, type Request, type Response } from 'express';
+import express, {
+  Router,
+  type IRouter,
+  type Request,
+  type Response,
+} from 'express';
 
-import { ObjectPermission } from '../lib/objectAcl';
 import {
+  createObjectStorageService,
+  isLocalObjectStorageDriver,
+  LocalObjectStorageService,
   ObjectNotFoundError,
-  ObjectStorageService,
 } from '../lib/objectStorage';
 
 const router: IRouter = Router();
-const objectStorageService = new ObjectStorageService();
+const objectStorageService = createObjectStorageService();
 
 function hasAuthenticatedSession(
   req: Request,
@@ -47,7 +53,9 @@ router.post(
     try {
       const { name, size, contentType } = parsed.data;
 
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const uploadURL =
+        await objectStorageService.getObjectEntityUploadURL(baseUrl);
       const objectPath =
         objectStorageService.normalizeObjectEntityPath(uploadURL);
 
@@ -157,5 +165,38 @@ router.get('/storage/objects/*path', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to serve object' });
   }
 });
+
+/**
+ * PUT /storage/local-uploads/:objectId
+ *
+ * Only meaningful when OBJECT_STORAGE_DRIVER=local. This is where the
+ * "presigned" URL returned by /storage/uploads/request-url actually points
+ * to in local dev, since there's no real cloud bucket to sign a URL against.
+ */
+router.put(
+  '/storage/local-uploads/:objectId',
+  express.raw({ type: '*/*', limit: '50mb' }),
+  async (req: Request, res: Response) => {
+    if (!isLocalObjectStorageDriver()) {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+
+    try {
+      const rawObjectId = req.params.objectId;
+      const objectId = Array.isArray(rawObjectId) ? rawObjectId[0] : rawObjectId;
+      const localStorageService = new LocalObjectStorageService();
+      await localStorageService.writeLocalUpload(
+        objectId,
+        req.body as Buffer,
+        req.headers['content-type'] || 'application/octet-stream',
+      );
+      res.status(200).end();
+    } catch (error) {
+      req.log.error({ err: error }, 'Error writing local upload');
+      res.status(500).json({ error: 'Failed to store upload' });
+    }
+  },
+);
 
 export default router;
